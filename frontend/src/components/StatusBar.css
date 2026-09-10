@@ -1,0 +1,96 @@
+.status-bar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 32px;
+  background: linear-gradient(180deg, rgba(10, 10, 10, 0.9) 0%, rgba(10, 10, 10, 0.4) 100%);
+  border-bottom: 1px solid #ff2a2a33;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 20px;
+  z-index: 100;
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 11px;
+}
+
+.status-left,
+.status-right {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.status-center {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  animation: pulse-dot 1.5s infinite;
+}
+
+.status-dot.online {
+  background: #00ff88;
+  box-shadow: 0 0 8px #00ff88;
+}
+
+.status-dot.offline {
+  background: #ff2a2a;
+  box-shadow: 0 0 8px #ff2a2a;
+}
+
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+.status-text {
+  color: #00ff88;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.kiroshi-logo {
+  font-family: 'Orbitron', sans-serif;
+  font-weight: 900;
+  font-size: 14px;
+  color: #ff2a2a;
+  text-shadow: 0 0 10px #ff2a2a;
+}
+
+.kiroshi-version {
+  color: #ff2a2a66;
+  font-size: 9px;
+}
+
+.status-item {
+  color: #ffffff88;
+}
+
+.status-mode {
+  color: #00bfff;
+  padding: 2px 8px;
+  border: 1px solid #00bfff44;
+  border-radius: 2px;
+}
+
+.status-mode.scanning {
+  color: #ff2a2a;
+  border-color: #ff2a2a;
+  animation: scan-blink 0.5s infinite alternate;
+}
+
+@keyframes scan-blink {
+  0% { background: transparent; }
+  100% { background: #ff2a2a22; }
+}
+
+.status-time {
+  color: #ffffff66;
+}

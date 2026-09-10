@@ -40,7 +40,62 @@
 ## Hoja de Ruta (Roadmap)
 
 - [x] Transmisión de video por WebSockets y HUD en React.
-- [x] Control por voz para alternar modos de escaneo.
-- [x] Intefase básica de detección de objetos con YOLOv8.
+- [ ] Control por voz para alternar modos de escaneo.
+- [x] Interfase básica de detección de objetos con YOLOv8 (CUDA/RTX 3050).
+- [x] Pipeline backend: FastAPI + OpenCV + YOLOv8-nano en GPU.
+- [x] HUD base: brackets, labels, crosshair, compass, métricas, modo escaneo (Tab).
 - [ ] **Módulo de Reconocimiento Fino:** Extracción de parches de imagen para consulta en modelo multimodal.
 - [ ] **Enriquecimiento Web:** Integración de API de búsqueda para desplegar nombre exacto y especificaciones del producto en el HUD.
+
+---
+
+## Cómo iniciar el sistema
+
+### Requisitos
+- Python 3.14+
+- Node.js 18+
+- NVIDIA GPU con CUDA (RTX 3050 verificado)
+
+### Opción 1: Script automático
+```bash
+start.bat
+```
+
+### Opción 2: Manual
+
+**Backend (terminal 1):**
+```bash
+cd backend
+python -m venv .venv
+.venv\Scripts\pip install -r requirements.txt
+.venv\Scripts\python -m uvicorn main:app --host 0.0.0.0 --port 8000
+```
+
+**Frontend (terminal 2):**
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+### Acceso
+- **Frontend (HUD):** http://localhost:3000
+- **Backend health:** http://localhost:8000/health
+
+### Controles
+| Tecla | Función |
+|-------|---------|
+| `Tab` | Alternar Modo Escaneo / Normal |
+| `Ctrl+C` (backend) | Detener servidor |
+
+### Arquitectura
+
+```
+┌──────────────┐      WebSocket       ┌──────────────┐
+│   Frontend   │◀──── JSON frames ────│   Backend    │
+│  React/Vite  │                      │  FastAPI     │
+│  Canvas 2D   │                      │  YOLOv8-nano │
+│  HUD Kiroshi │                      │  OpenCV      │
+└──────────────┘                      │  CUDA GPU    │
+                                      └──────────────┘
+```

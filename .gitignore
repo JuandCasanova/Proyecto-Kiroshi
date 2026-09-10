@@ -1,0 +1,22 @@
+# Python
+__pycache__/
+*.py[cod]
+venv/
+.venv/
+.env
+yolov8n.pt
+*.onnx
+kiroshi.log
+
+# Node
+node_modules/
+dist/
+.vite/
+
+# Windows
+Thumbs.db
+Desktop.ini
+
+# IDE
+.vscode/
+.idea/

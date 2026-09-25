@@ -1,101 +1,232 @@
-# Kiroshi Optics HUD — Next-Gen AI Visual Scanner & Object Identifier
+<div align="center">
 
-**Kiroshi Optics HUD** es un sistema de visión por computadora y reconocimiento visual avanzado inspirado en la interfaz cibernética de *Cyberpunk 2077*. El proyecto evoluciona el paradigma de detección tradicional hacia la **identificación precisa de productos e investigación contextual en tiempo real**.
+# 🤖 Mi Framework de IA con Agentes y Skills
 
----
+**Arquitectura en capas, estructura de carpetas y guía de uso del generador**
 
-## Características Principales
+![Python](https://img.shields.io/badge/Python-3.11%2B-3776AB?style=for-the-badge&logo=python&logoColor=white)
+![YAML](https://img.shields.io/badge/Config-YAML-CB171E?style=for-the-badge&logo=yaml&logoColor=white)
+![Status](https://img.shields.io/badge/Status-En%20Desarrollo-yellow?style=for-the-badge)
+![License](https://img.shields.io/badge/Licencia-MIT-green?style=for-the-badge)
 
-* **Detección y Clasificación Primaria (YOLOv8):** Localización en tiempo real de entidades (personas, animales, objetos) en el stream de video.
-* **Identificación Fina e Investigación Contextual (AI Vision + Web Search):** 
-  * Diferenciación exacta entre productos similares (ej. *Botella de agua vs. Tarro de bloqueador solar*).
-  * Extracción de recortes de imagen (*image crops*) para análisis multimodal e identificación precisa estilo Google Lens.
-  * Búsqueda e integración de información detallada del objeto en tiempo real para enriquecer los datos presentados en la interfaz.
-* **Control por Comandos de Voz:** Conmutación entre **Modo Normal** y **Modo Escaneo** mediante la **Web Speech API** (`"Modo escaneo"` / `"Modo normal"`).
-* **Clasificación de Amenazas (Kiroshi Logic):** Categorización dinámica de riesgo, asignando códigos de color, niveles de amenaza e indicadores HUD.
-* **Stream de Video de Baja Latencia:** Conexión bidireccional mediante **WebSockets** y procesamiento acelerado por GPU (CUDA / PyTorch).
-* **Interfaz Cyberpunk (React + Canvas 2D):** Renderizado de retículas cibernéticas, métricas del sistema y datos extraídos a 30+ FPS.
+Un framework de software para alojar **múltiples agentes de IA**, **skills reutilizables** y su **infraestructura compartida** (orquestación, memoria, gateway de LLM, seguridad y observabilidad).
+
+</div>
 
 ---
 
-##  Arquitectura y Tecnologías
+## 📋 Tabla de contenidos
 
-### Backend (Python)
-* **FastAPI:** Servidor WebSocket asíncrono para transmisión continua.
-* **Ultralytics YOLOv8:** Detección rápida de regiones de interés (RoI).
-* **AI Vision & Search Integration:** Modelos multimodales / APIs de búsqueda visual para reconocimiento fino de productos e investigación web.
-* **OpenCV & NumPy:** Procesamiento de cuadros de video y recortes de imagen.
-* **PyTorch (CUDA):** Aceleración por hardware.
-
-### Frontend (React / JavaScript)
-* **React.js (Vite):** UI reactiva estilo Cyberpunk.
-* **HTML5 Canvas 2D:** Renderizado de retículas y capas de información contextual.
-* **Web Speech API:** Control por voz nativo desde el navegador.
-
----
-| Miembro | Rol |
-|---------|-----|
-| **Juan David Casanova** | Líder Técnico, Gestor de producto, QA/Documentación, DevOps|
-
-## Hoja de Ruta (Roadmap)
-
-- [x] Transmisión de video por WebSockets y HUD en React.
-- [ ] Control por voz para alternar modos de escaneo.
-- [x] Interfase básica de detección de objetos con YOLOv8 (CUDA/RTX 3050).
-- [x] Pipeline backend: FastAPI + OpenCV + YOLOv8-nano en GPU.
-- [x] HUD base: brackets, labels, crosshair, compass, métricas, modo escaneo (Tab).
-- [ ] **Módulo de Reconocimiento Fino:** Extracción de parches de imagen para consulta en modelo multimodal.
-- [ ] **Enriquecimiento Web:** Integración de API de búsqueda para desplegar nombre exacto y especificaciones del producto en el HUD.
+- [Principios de diseño](#-principios-de-diseño)
+- [Arquitectura en capas](#-arquitectura-en-capas)
+- [Estructura del proyecto](#-estructura-del-proyecto)
+- [Detalle de cada carpeta](#-detalle-de-cada-carpeta)
+- [El manifiesto de agente/skill](#-el-manifiesto-de-agente-skill)
+- [Cómo usar el generador](#-cómo-usar-el-generador)
+- [Errores comunes a evitar](#-errores-comunes-a-evitar)
 
 ---
 
-## Cómo iniciar el sistema
+## 🧭 Principios de diseño
 
-### Requisitos
-- Python 3.14+
-- Node.js 18+
-- NVIDIA GPU con CUDA (RTX 3050 verificado)
+> **Un agente no es un skill.**
 
-### Opción 1: Script automático
+| Concepto | Descripción |
+|----------|-------------|
+| **Agente** | *Decide.* Mantiene un ciclo de razonamiento, estado y memoria de conversación. |
+| **Skill** | *Ejecuta.* Capacidad determinística y sin estado propio que un agente invoca (función, wrapper de API, plantilla de prompt con contrato fijo). |
+
+1. **Registro explícito, no autodescubrimiento mágico.** Cada agente y skill se declara en un manifiesto (YAML) con su contrato de entrada/salida, permisos y dependencias — nada de escanear carpetas y adivinar.
+2. **El orquestador no contiene lógica de negocio.** Solo enruta, planifica y delega. La lógica específica de dominio vive dentro de cada agente.
+3. **La memoria es un servicio, no un detalle de cada agente.** Solo así se pueden componer agentes y auditar qué se guardó y por qué.
+
+---
+
+## 🏗️ Arquitectura en capas
+
+El framework se organiza en **cuatro capas**, cada una dependiente únicamente de la capa inmediatamente inferior:
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                       INTERFACES                            │
+│              API · CLI · Chat UI                            │
+├─────────────────────────────────────────────────────────────┤
+│                      ORQUESTADOR                            │
+│          Router · Planner · Executor                        │
+├─────────────────────────────────────────────────────────────┤
+│                 AGENTES  ·  SKILLS                          │
+│      research_agent    web_search      code_executor        │
+│      coding_agent      db_query  document_generator         │
+├─────────────────────────────────────────────────────────────┤
+│                 INFRAESTRUCTURA COMPARTIDA                  │
+│      Memoria · LLM Gateway · Seguridad · Observabilidad     │
+└─────────────────────────────────────────────────────────────┘
+```
+
+Las capas superiores dependen de la infraestructura compartida; **ninguna capa inferior conoce a las superiores**. Esto permite reemplazar, por ejemplo, el proveedor de LLM sin tocar el código de los agentes.
+
+---
+
+## 📁 Estructura del proyecto
+
+```text
+mi-framework-ia/
+├── core/                     # Runtime del framework (agnóstico de dominio)
+│   ├── orchestrator/         #   router, planner, executor
+│   ├── agent_base/           #   clase base + registro de agentes
+│   ├── skill_base/           #   clase base + registro de skills
+│   ├── memory/               #   short_term, long_term, memory_manager
+│   ├── llm_gateway/          #   provider_router, cost_tracker
+│   ├── security/             #   permissions, guardrails
+│   └── observability/        #   tracer, logger
+├── agents/                   # Un subdirectorio por agente
+│   ├── research_agent/       #   agent.py, manifest.yaml
+│   └── coding_agent/         #   agent.py, manifest.yaml
+├── skills/                   # Capacidades reutilizables entre agentes
+│   ├── web_search/
+│   ├── code_executor/
+│   ├── db_query/
+│   └── document_generator/
+├── tools/                    # Integraciones externas puras (GitHub, Slack)
+├── config/                   # Qué está activo + configuración por entorno
+│   └── environments/         #   dev.yaml, prod.yaml
+├── evaluations/              # Benchmarks y tests (regresiones)
+│   ├── agent_benchmarks/
+│   └── skill_tests/
+├── interfaces/               # Puntos de entrada externos
+│   ├── api/
+│   ├── cli/
+│   └── chat_ui/
+├── docs/                     # architecture.md, manifest_schema.md
+├── crear_estructura_framework.py   # Script generador idempotente
+└── README.md
+```
+
+---
+
+## 🗂️ Detalle de cada carpeta
+
+### 🧬 `core/`
+**El runtime del framework**: código agnóstico de dominio que no cambia entre proyectos. Contiene el orquestador, las clases base de agente y skill, la gestión de memoria, el gateway de LLM, seguridad y observabilidad.
+
+| Módulo | Componentes | Responsabilidad |
+|--------|-------------|-----------------|
+| `orchestrator` | `router` · `planner` · `executor` | Decide qué agente atiende cada tarea, descompone tareas complejas y ejecuta el plan con reintentos. |
+| `agent_base` | `base_agent` · `agent_registry` | Ciclo de vida de los agentes y registro central para el orquestador. |
+| `skill_base` | `base_skill` · `skill_registry` | Contrato de entrada/salida y registro de skills. |
+| `memory` | `short_term` · `long_term` · `memory_manager` | Contexto de sesión, memoria persistente y API única de acceso. |
+| `llm_gateway` | `provider_router` · `cost_tracker` | Abstrae el proveedor de LLM y registra tokens/costo por llamada. |
+| `security` | `permissions` · `guardrails` | Mínimo privilegio por agente/skill y validación de entradas/salidas. |
+| `observability` | `tracer` · `logger` | Traza cada decisión y llamada; logging centralizado. |
+
+### 🤖 `agents/`
+Un **subdirectorio por agente**. Cada uno implementa la clase base de agente (`BaseAgent`) y declara su propio `manifest.yaml` con las **skills que requiere** y los **permisos que necesita**.
+
+| Agente | Skills requeridas | Permisos |
+|--------|-------------------|----------|
+| `research_agent` | `web_search`, `document_generator` | `network_access` |
+| `coding_agent` | `code_executor` | `code_execution` |
+
+### 🧩 `skills/`
+**Capacidades reutilizables entre agentes.** Cada skill es determinística, sin estado propio, y declara su contrato de entrada/salida en su manifiesto.
+
+| Skill | Entrada | Salida | Permisos |
+|-------|---------|--------|----------|
+| `web_search` | `query` | `results[]` | network |
+| `code_executor` | `code`, `language` | `stdout`, `stderr` | `code_execution` |
+| `db_query` | `sql` | `rows[]` | `db_read` |
+| `document_generator` | `content`, `format` | `file_path` | — |
+
+### 🔌 `tools/`
+Integraciones externas puras — clientes de API como GitHub o Slack — **sin ninguna lógica de agente ni de orquestación**.
+
+### ⚙️ `config/`
+Define **qué agentes y skills están activos** y la **configuración por entorno** (desarrollo, producción).
+
+```yaml
+# config/agents.yaml
+active_agents:
+  - research_agent
+  - coding_agent
+```
+
+### 🧪 `evaluations/`
+Casos de prueba y benchmarks que verifican que un **cambio de prompt o de skill no rompe** el comportamiento esperado de un agente. Suele omitirse al inicio — es la **causa más común de regresiones silenciosas**.
+
+### 🚪 `interfaces/`
+**Puntos de entrada externos**: API HTTP, CLI y una posible interfaz de chat, todos consumiendo al orquestador.
+
+### 📄 `docs/`
+Documentación técnica: arquitectura (`architecture.md`) y esquema de manifiestos (`manifest_schema.md`).
+
+---
+
+## 📝 El manifiesto de agente/skill
+
+Cada agente y skill **declara, en lugar de solo implementar**, su contrato. Ejemplo real generado por el script:
+
+```yaml
+# agents/research_agent/manifest.yaml
+name: research_agent
+version: 0.1.0
+description: Investiga un tema y produce un resumen con fuentes
+skills_required: [web_search, document_generator]
+permissions: [network_access]
+input_schema: {}
+output_schema: {}
+```
+
+Esto permite tres cosas:
+
+1. **El orquestador decide a quién delegar** sin inspeccionar código.
+2. **Agentes y skills se versionan de forma independiente.**
+3. **Se puede auditar qué tiene acceso a qué** — especialmente relevante cuando una skill tiene permisos de escritura o ejecución de código.
+
+---
+
+## 🚀 Cómo usar el generador
+
+El script `crear_estructura_framework.py` crea todas las carpetas y archivos base (`.py`, `.yaml` y `.md`) en **una sola ejecución**. Es **idempotente**: si un archivo ya existe, lo omite en lugar de sobrescribirlo.
+
+### Ejecución
+
 ```bash
-start.bat
+# 1. Crea la carpeta "mi-framework-ia" en el directorio actual
+python3 crear_estructura_framework.py
+
+# 2. O con un nombre específico
+python3 crear_estructura_framework.py mi-framework-ia
+
+# 3. O en una ruta absoluta
+python3 crear_estructura_framework.py /home/esteban/proyectos/mi-framework-ia
 ```
 
-### Opción 2: Manual
+> 💡 **Windows**: reemplaza `python3` por `python` si tu instalación no registra el alias `python3`.
 
-**Backend (terminal 1):**
-```bash
-cd backend
-python -m venv .venv
-.venv\Scripts\pip install -r requirements.txt
-.venv\Scripts\python -m uvicorn main:app --host 0.0.0.0 --port 8000
-```
+Al finalizar, el script imprime en consola **cada archivo creado** y la **ruta absoluta final** del proyecto.
 
-**Frontend (terminal 2):**
-```bash
-cd frontend
-npm install
-npm run dev
-```
+---
 
-### Acceso
-- **Frontend (HUD):** http://localhost:3000
-- **Backend health:** http://localhost:8000/health
+## ⚠️ Errores comunes a evitar
 
-### Controles
-| Tecla | Función |
-|-------|---------|
-| `Tab` | Alternar Modo Escaneo / Normal |
-| `Ctrl+C` (backend) | Detener servidor |
+| Error | Por qué evitarlo |
+|-------|------------------|
+| 🧠 **Skills con estado escondido** | Si una skill guarda información entre llamadas sin pasar por `memory_manager`, se rompe la composabilidad y la trazabilidad. |
+| 🔌 **Orquestador acoplado a un proveedor de LLM** | Por eso existe `llm_gateway` como capa separada: cambiar de proveedor no debería requerir tocar agentes ni orquestador. |
+| 🧪 **Ausencia de evaluaciones automatizadas** | Un cambio de prompt puede romper silenciosamente el comportamiento de un agente; sin benchmarks en `evaluations/`, el problema se detecta hasta producción. |
+| 🔐 **Seguridad como ocurrencia tardía** | `permissions` y `guardrails` deben existir desde el primer agente con red o ejecución de código, no agregarse cuando ya hay diez skills sin restricciones. |
 
-### Arquitectura
+---
 
-```
-┌──────────────┐      WebSocket       ┌──────────────┐
-│   Frontend   │◀──── JSON frames ────│   Backend    │
-│  React/Vite  │                      │  FastAPI     │
-│  Canvas 2D   │                      │  YOLOv8-nano │
-│  HUD Kiroshi │                      │  OpenCV      │
-└──────────────┘                      │  CUDA GPU    │
-                                      └──────────────┘
-```
+## 📄 Licencia
+
+MIT © [Esteban]()
+
+---
+
+<div align="center">
+
+**¿Encontraste un bug o tienes una mejora?** Abre un [issue](https://github.com/esteban) o envía un *pull request*.
+
+</div>
+# frameworkIa

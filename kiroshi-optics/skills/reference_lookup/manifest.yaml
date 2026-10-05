@@ -1,0 +1,20 @@
+name: reference_lookup
+version: 0.1.0
+description: Consulta referencias externas para verificar candidatos y cerrar gaps de especificidad
+input_schema:
+  query: {type: string, description: "Consulta construida a partir del candidato y sus discriminadores"}
+  candidates: {type: array, items: object}
+  verify_only:
+    type: boolean
+    default: true
+    description: Si es true, solo confirma o refuta; nunca propone candidatos nuevos
+output_schema:
+  sources: {type: array, items: object}
+  confirmed: {type: array, items: string}
+  refuted: {type: array, items: string}
+  gap_hits:
+    type: object
+    description: "discriminador -> referencia que lo respalda"
+permissions: [network_access]
+rate_limit: 30/min
+determinism: network

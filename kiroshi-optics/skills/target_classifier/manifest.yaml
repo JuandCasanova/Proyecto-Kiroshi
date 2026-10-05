@@ -1,0 +1,27 @@
+name: target_classifier
+version: 0.1.0
+description: Clasifica el objetivo marcado en la jerarquia Kiroshi con el nivel de granularidad solicitado
+input_schema:
+  mark: {type: object}
+  specificity_level:
+    type: enum
+    values: [coarse, standard, forensic]
+    default: forensic
+  taxonomy_ref: {type: string, description: "Ruta a la taxonomia activa"}
+  multi_label:
+    type: boolean
+    default: true
+    description: Permite candidatos multiple cuando la marca es ambigua
+output_schema:
+  labels:
+    type: array
+    items:
+      type: object
+      properties:
+        class_id: {type: string}
+        class_path: {type: array, items: string, description: "Jerarquia completa"}
+        confidence: {type: number}
+        discriminators: {type: array, items: string, description: "Atributos que justifican este"}
+  ambiguity: {type: number, description: "0.0 unico, 1.0 indistinguible"}
+requires: [mark_parser]
+determinism: model

@@ -1,0 +1,20 @@
+name: specificity_agent
+version: 0.1.0
+description: Refina un escaneo hasta la maxima especificidad alcanzable con la evidencia disponible
+skills_required: [specificity_enhancer, scan_validator, reference_lookup]
+permissions: [memory_read, network_access]
+input_schema:
+  scan_result:
+    type: object
+    required: [target_class, attributes]
+  target_specificity:
+    type: number
+    description: "0.0 a 1.0, valor minimo aceptable para dar el escaneo por valido"
+  allow_web_lookup:
+    type: boolean
+    default: true
+output_schema:
+  refined_attributes: {type: object}
+  specificity: {type: number}
+  specificity_gain: {type: number}
+  blocking_gaps: {type: array, items: string}

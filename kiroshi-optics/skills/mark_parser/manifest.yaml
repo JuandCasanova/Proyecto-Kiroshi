@@ -1,0 +1,25 @@
+name: mark_parser
+version: 0.1.0
+description: Normaliza cualquier formato de marca entrante a un Mark canonico y mediible
+input_schema:
+  source:
+    type: enum
+    required: true
+    values: [image_region, screen_region, text_span, audio_span, file_region]
+  bbox: {type: array, items: number, description: "[x, y, w, h] normalizado 0-1"}
+  text: {type: string}
+  media_ref: {type: string}
+  frame_timestamp: {type: string}
+output_schema:
+  mark:
+    type: object
+    properties:
+      source: {type: string}
+      bbox: {type: array, items: number}
+      text: {type: string}
+      modality: {type: string, description: "imagen, texto, audio o archivo"}
+      resolution: {type: object, description: "ancho/alto en pixeles si aplica"}
+      preprocessed_ref: {type: string, description: "Ruta al recorte ya normalizado"}
+  parse_warnings: {type: array, items: string}
+determinism: pure
+cacheable: true

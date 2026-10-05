@@ -1,0 +1,15 @@
+name: context_aggregator
+version: 0.1.0
+description: Reune señales de contexto y memoria para desempatar candidatos sin contaminar la evidencia del objetivo
+input_schema:
+  candidates: {type: array, items: object}
+  session_history: {type: array, items: object}
+  environment_signals: {type: object}
+  use_long_term_memory: {type: boolean, default: true}
+output_schema:
+  ranking: {type: array, items: object}
+  disambiguated: {type: string}
+  used_signals: {type: array, items: string}
+  remaining_ambiguity: {type: number}
+  contamination_warning: {type: string, description: "Presente si se uso contexto no verificado"}
+determinism: model

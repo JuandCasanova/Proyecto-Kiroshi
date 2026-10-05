@@ -1,0 +1,26 @@
+name: feature_extractor
+version: 0.1.0
+description: Extrae los discriminadores taxonomicos del objetivo marcado para alcanzar la mayor especificidad posible
+input_schema:
+  mark: {type: object}
+  candidate:
+    type: object
+    required: true
+    description: Label devuelto por target_classifier
+  discriminators:
+    type: array
+    items: string
+    description: Atributos requeridos por la taxonomia para ese class_id
+  measure_only:
+    type: boolean
+    default: false
+    description: Si es true, no infiere: solo reporta atributos ausentes
+output_schema:
+  features:
+    type: object
+    description: " discriminador -> {valor, confianza, ausente}"
+  resolved_count: {type: number}
+  missing_count: {type: number}
+  completeness: {type: number}
+requires: [target_classifier]
+determinism: model

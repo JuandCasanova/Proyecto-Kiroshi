@@ -1,0 +1,21 @@
+name: specificity_enhancer
+version: 0.1.0
+description: Itera el refinamiento del escaneo para alcanzar la maxima especificidad sin inventar evidencia
+input_schema:
+  candidate: {type: object}
+  features: {type: object, description: Salida de feature_extractor}
+  completeness: {type: number}
+  target_specificity: {type: number, description: "0.0 a 1.0"}
+  strict:
+    type: boolean
+    default: true
+    description: Si es true, rechaza cualquier atributo no verificado
+output_schema:
+  attributes: {type: object}
+  specificity: {type: number}
+  specificity_gain: {type: number}
+  passes_used: {type: number}
+  stop_reason: {type: string, description: "target_reached, no_gain, max_passes"}
+  blocking_gaps: {type: array, items: string, description: "Atributos que si se resolvian elevarian la especificidad"}
+requires: [feature_extractor]
+determinism: model

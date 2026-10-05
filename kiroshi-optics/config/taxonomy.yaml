@@ -1,0 +1,128 @@
+# Taxonomia Kiroshi.
+# Cada nodo declara los discriminators que lo separan de su clase hermana.
+# Son los unicos atributos que feature_extractor intenta resolver.
+
+version: 0.1.0
+root: entity
+
+levels:
+  - id: L1
+    name: clase_general
+    specificity_weight: 0.15
+  - id: L2
+    name: categoria
+    specificity_weight: 0.25
+  - id: L3
+    name: subtipo
+    specificity_weight: 0.30
+  - id: L4
+    name: variante
+    specificity_weight: 0.20
+  - id: L5
+    name: instancia
+    specificity_weight: 0.10
+
+nodes:
+  - id: vehicle
+    label: vehiculo
+    parent: entity
+    level: L1
+    discriminators: [wheel_count, body_type]
+
+  - id: vehicle.motorcycle
+    label: motocicleta
+    parent: vehicle
+    level: L2
+    discriminators: [engine_layout, fairing_type]
+
+  - id: vehicle.motorcycle.sport
+    label: sport
+    parent: vehicle.motorcycle
+    level: L3
+    discriminators: [exhaust_position, seat_height_mm]
+
+  - id: device
+    label: dispositivo
+    parent: entity
+    level: L1
+    discriminators: [form_factor, power_source]
+
+  - id: device.electronics
+    label: electronico
+    parent: device
+    level: L2
+    discriminators: [display_type, primary_input]
+
+  - id: device.electronics.phone
+    label: telefono
+    parent: device.electronics
+    level: L3
+    discriminators: [screen_ratio, bezel_type]
+
+  - id: device.electronics.tablet
+    label: tablet
+    parent: device.electronics
+    level: L3
+    discriminators: [screen_ratio, bezel_type]
+
+  - id: container
+    label: recipiente
+    parent: entity
+    level: L1
+    discriminators: [opening_type, base_shape, handle_present, neck_present]
+
+  - id: container.bottle
+    label: botella
+    parent: container
+    level: L2
+    discriminators: [neck_length, shoulder_shape, closure_type]
+
+  - id: container.bottle.juice
+    label: botella_de_jugo
+    parent: container.bottle
+    level: L3
+    discriminators: [mouth_size, body_curve]
+
+  - id: container.glass
+    label: vaso
+    parent: container
+    level: L2
+    discriminators: [wall_thickness, stem_present, rim_shape]
+
+  - id: container.glass.cup
+    label: taza_vaso
+    parent: container.glass
+    level: L3
+    discriminators: [handle_present, lip_thickness]
+
+  - id: container.glass.wineglass
+    label: copa_de_vino
+    parent: container.glass
+    level: L3
+    discriminators: [bowl_shape, stem_height, foot_width]
+
+  - id: container.cup
+    label: recipiente_con_asas
+    parent: container
+    level: L2
+    discriminators: [handle_count, handle_position]
+
+  - id: container.cup.mug
+    label: taza
+    parent: container.cup
+    level: L3
+    discriminators: [insulation_visible, rim_diameter]
+
+  - id: document
+    label: documento
+    parent: entity
+    level: L1
+    discriminators: [layout, medium]
+
+  - id: person
+    label: persona
+    parent: entity
+    level: L1
+    discriminators: []
+    privacy_class: restricted
+    discriminators_note: "Los atributos biometricos o faciales requieren permiso explicito"

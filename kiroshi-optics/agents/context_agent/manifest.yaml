@@ -1,0 +1,20 @@
+name: context_agent
+version: 0.1.0
+description: Reune contexto de usuario y memoria para desambiguar candidatos del escaneo
+skills_required: [context_aggregator, reference_lookup]
+permissions: [memory_read, memory_write, network_access]
+input_schema:
+  candidates:
+    type: array
+    items: object
+    description: Candidatos con el mismo score tras el escaneo
+  session_history:
+    type: array
+    items: object
+  environment_signals:
+    type: object
+    description: Señales pasivas (ubicacion, hora, dispositivos cercanos)
+output_schema:
+  disambiguated_target: {type: string}
+  used_signals: {type: array, items: string}
+  remaining_ambiguity: {type: number}

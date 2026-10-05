@@ -1,0 +1,29 @@
+name: scan_agent
+version: 0.1.0
+description: Coordina el pipeline de escaneo de Kiroshi sobre lo que el usuario marco
+skills_required: [mark_parser, target_classifier, feature_extractor, specificity_enhancer, scan_validator]
+permissions: [memory_read, memory_write]
+input_schema:
+  mark:
+    type: object
+    required: [source]
+    properties:
+      source:
+        type: enum
+        values: [image_region, screen_region, text_span, audio_span, file_region]
+        description: De donde proviene lo marcado
+      bbox: {type: array, items: number, description: "[x, y, w, h] normalizado 0-1"}
+      text: {type: string}
+      media_ref: {type: string}
+  context_hint: {type: string, description: Pista opcional dada por el usuario}
+  specificity_level:
+    type: enum
+    values: [coarse, standard, forensic]
+    default: forensic
+    description: Granularidad minima exigida al resultado
+output_schema:
+  target_class: {type: string}
+  attributes: {type: object}
+  specificity: {type: number, description: "0.0 a 1.0"}
+  unresolved: {type: array, items: string}
+  evidence: {type: array, items: string}

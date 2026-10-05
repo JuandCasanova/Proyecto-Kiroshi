@@ -1,0 +1,27 @@
+name: scan_validator
+version: 0.1.0
+description: Verifica coherencia taxonomica y calcula la especificidad efectiva de un escaneo
+input_schema:
+  candidate: {type: object}
+  attributes: {type: object}
+  target_specificity: {type: number}
+  min_acceptable: {type: number, default: 0.55}
+  strict_taxonomy_check:
+    type: boolean
+    default: true
+    description: Verifica que cada atributo declarado existe en la taxonomia
+output_schema:
+  accepted: {type: boolean}
+  effective_specificity: {type: number}
+  specificity_level: {type: string, description: "coarse, standard o forensic"}
+  violations:
+    type: array
+    items:
+      type: object
+      properties:
+        field: {type: string}
+        reason: {type: string}
+        severity: {type: string}
+  remediation: {type: string, description: "Skill sugerida para corregir"}
+requires: [specificity_enhancer]
+determinism: pure

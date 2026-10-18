@@ -1,232 +1,156 @@
-<div align="center">
+# Kiroshi Optics
 
-# 🤖 Mi Framework de IA con Agentes y Skills
+**Asistencia visual inteligente inspirada en las ópticas Kiroshi de _Cyberpunk 2077_.**
 
-**Arquitectura en capas, estructura de carpetas y guía de uso del generador**
+Kiroshi Optics busca llevar al mundo real algunas de las capacidades de las ópticas del videojuego mediante una aplicación que utiliza la cámara del dispositivo donde se ejecuta. El sistema está pensado para reconocer y describir con precisión lo que una persona observa, analizar texto visible y, a futuro, mostrar información contextual superpuesta a la imagen.
 
-![Python](https://img.shields.io/badge/Python-3.11%2B-3776AB?style=for-the-badge&logo=python&logoColor=white)
-![YAML](https://img.shields.io/badge/Config-YAML-CB171E?style=for-the-badge&logo=yaml&logoColor=white)
-![Status](https://img.shields.io/badge/Status-En%20Desarrollo-yellow?style=for-the-badge)
-![License](https://img.shields.io/badge/Licencia-MIT-green?style=for-the-badge)
+La inspiración es conceptual: el proyecto no contempla fabricar implantes oculares. La experiencia se desarrollará como software y podrá evolucionar hacia distintos dispositivos con cámara.
 
-Un framework de software para alojar **múltiples agentes de IA**, **skills reutilizables** y su **infraestructura compartida** (orquestación, memoria, gateway de LLM, seguridad y observabilidad).
+> **Estado actual:** el repositorio define la arquitectura, los agentes, las skills y sus contratos. Es todavía una base de desarrollo: las funciones de agentes y skills, el cliente de visión y las interfaces no están implementados. Por tanto, la captura de cámara, el análisis en vivo, la traducción y las superposiciones son objetivos, no capacidades disponibles hoy.
 
-</div>
+## Objetivos
 
----
+- Usar la cámara del dispositivo como fuente de imágenes y, posteriormente, de video en tiempo real.
+- Detectar y clasificar objetos, procurando llegar a la identificación más específica que permita la evidencia visual.
+- Leer texto de la escena mediante OCR y habilitar su traducción en tiempo real como una capacidad futura.
+- Presentar resultados de forma clara y, en una etapa posterior, como elementos flotantes sobre la imagen (HUD o realidad aumentada).
+- Mantener resultados verificables: distinguir lo observado de lo inferido, comunicar incertidumbre y no inventar atributos.
+- Diseñar componentes modulares para poder cambiar la cámara, la interfaz o el proveedor de visión sin rehacer el núcleo.
 
-## 📋 Tabla de contenidos
+## Alcance y etapas previstas
 
-- [Principios de diseño](#-principios-de-diseño)
-- [Arquitectura en capas](#-arquitectura-en-capas)
-- [Estructura del proyecto](#-estructura-del-proyecto)
-- [Detalle de cada carpeta](#-detalle-de-cada-carpeta)
-- [El manifiesto de agente/skill](#-el-manifiesto-de-agente-skill)
-- [Cómo usar el generador](#-cómo-usar-el-generador)
-- [Errores comunes a evitar](#-errores-comunes-a-evitar)
+### Base actual
 
----
+- Arquitectura por capas para interfaces, orquestación, agentes, skills e infraestructura compartida.
+- Contratos declarativos para los agentes y las skills.
+- Pipeline de análisis de una región marcada (`Mark`) y taxonomía visual inicial.
+- Diseños de permisos, trazabilidad, memoria y validación.
 
-## 🧭 Principios de diseño
+### Capacidades por implementar
 
-> **Un agente no es un skill.**
+1. **Captura de cámara:** obtener fotogramas del dispositivo y permitir seleccionar una región u objetivo.
+2. **Análisis visual:** integrar detección, segmentación y clasificación mediante un proveedor de visión.
+3. **Lectura de texto:** ejecutar OCR sobre texto seleccionado o visible en la escena.
+4. **Traducción:** traducir el texto reconocido y asociarlo con su posición en la imagen.
+5. **Interfaz visual:** presentar etiquetas, resultados y traducciones como superposiciones; optimizar el procesamiento para una experiencia fluida.
+6. **Pruebas y privacidad:** medir precisión y latencia, controlar el uso de datos visuales y validar permisos antes de incorporar nuevas fuentes de contexto.
 
-| Concepto | Descripción |
-|----------|-------------|
-| **Agente** | *Decide.* Mantiene un ciclo de razonamiento, estado y memoria de conversación. |
-| **Skill** | *Ejecuta.* Capacidad determinística y sin estado propio que un agente invoca (función, wrapper de API, plantilla de prompt con contrato fijo). |
+Las capacidades de cámara, OCR, traducción y HUD requerirán nuevos componentes o la implementación de los adaptadores existentes. No están incluidas entre las skills activas en la configuración actual.
 
-1. **Registro explícito, no autodescubrimiento mágico.** Cada agente y skill se declara en un manifiesto (YAML) con su contrato de entrada/salida, permisos y dependencias — nada de escanear carpetas y adivinar.
-2. **El orquestador no contiene lógica de negocio.** Solo enruta, planifica y delega. La lógica específica de dominio vive dentro de cada agente.
-3. **La memoria es un servicio, no un detalle de cada agente.** Solo así se pueden componer agentes y auditar qué se guardó y por qué.
+## Cómo funciona el análisis diseñado
 
----
-
-## 🏗️ Arquitectura en capas
-
-El framework se organiza en **cuatro capas**, cada una dependiente únicamente de la capa inmediatamente inferior:
-
-```
-┌─────────────────────────────────────────────────────────────┐
-│                       INTERFACES                            │
-│              API · CLI · Chat UI                            │
-├─────────────────────────────────────────────────────────────┤
-│                      ORQUESTADOR                            │
-│          Router · Planner · Executor                        │
-├─────────────────────────────────────────────────────────────┤
-│                 AGENTES  ·  SKILLS                          │
-│      research_agent    web_search      code_executor        │
-│      coding_agent      db_query  document_generator         │
-├─────────────────────────────────────────────────────────────┤
-│                 INFRAESTRUCTURA COMPARTIDA                  │
-│      Memoria · LLM Gateway · Seguridad · Observabilidad     │
-└─────────────────────────────────────────────────────────────┘
-```
-
-Las capas superiores dependen de la infraestructura compartida; **ninguna capa inferior conoce a las superiores**. Esto permite reemplazar, por ejemplo, el proveedor de LLM sin tocar el código de los agentes.
-
----
-
-## 📁 Estructura del proyecto
+El núcleo procesa una región seleccionada, independientemente del dispositivo que la haya capturado. Así se evita acoplar el análisis a una cámara o interfaz específica.
 
 ```text
-mi-framework-ia/
-├── core/                     # Runtime del framework (agnóstico de dominio)
-│   ├── orchestrator/         #   router, planner, executor
-│   ├── agent_base/           #   clase base + registro de agentes
-│   ├── skill_base/           #   clase base + registro de skills
-│   ├── memory/               #   short_term, long_term, memory_manager
-│   ├── llm_gateway/          #   provider_router, cost_tracker
-│   ├── security/             #   permissions, guardrails
-│   └── observability/        #   tracer, logger
-├── agents/                   # Un subdirectorio por agente
-│   ├── research_agent/       #   agent.py, manifest.yaml
-│   └── coding_agent/         #   agent.py, manifest.yaml
-├── skills/                   # Capacidades reutilizables entre agentes
-│   ├── web_search/
-│   ├── code_executor/
-│   ├── db_query/
-│   └── document_generator/
-├── tools/                    # Integraciones externas puras (GitHub, Slack)
-├── config/                   # Qué está activo + configuración por entorno
-│   └── environments/         #   dev.yaml, prod.yaml
-├── evaluations/              # Benchmarks y tests (regresiones)
-│   ├── agent_benchmarks/
-│   └── skill_tests/
-├── interfaces/               # Puntos de entrada externos
-│   ├── api/
-│   ├── cli/
-│   └── chat_ui/
-├── docs/                     # architecture.md, manifest_schema.md
-├── crear_estructura_framework.py   # Script generador idempotente
-└── README.md
+Imagen o región marcada
+          │
+          ▼
+     mark_parser          Normaliza la entrada a un Mark canónico
+          │
+          ▼
+   target_classifier      Propone clases y candidatos posibles
+          │
+          ▼
+   feature_extractor      Busca rasgos discriminadores observables
+          │
+          ▼
+ specificity_enhancer    Refina el resultado con evidencia disponible
+          │
+          ▼
+    scan_validator        Comprueba coherencia y decide si se acepta
+          │
+          └──────────────► Resultado, evidencia, incertidumbre y faltantes
 ```
 
----
+El `context_agent` puede ayudar a resolver empates entre candidatos; el contexto se mantiene separado de los atributos observados. Si falta evidencia que pueda comprobarse externamente, `reference_lookup` puede verificarla con fuentes autorizadas. Es la única skill diseñada con permiso de red.
 
-## 🗂️ Detalle de cada carpeta
+La captura futura de cámara entregará fotogramas o regiones a este pipeline. De igual manera, el OCR y la traducción deberán añadirse como capacidades explícitas; el flujo actual no los ejecuta.
 
-### 🧬 `core/`
-**El runtime del framework**: código agnóstico de dominio que no cambia entre proyectos. Contiene el orquestador, las clases base de agente y skill, la gestión de memoria, el gateway de LLM, seguridad y observabilidad.
+## Arquitectura
 
-| Módulo | Componentes | Responsabilidad |
-|--------|-------------|-----------------|
-| `orchestrator` | `router` · `planner` · `executor` | Decide qué agente atiende cada tarea, descompone tareas complejas y ejecuta el plan con reintentos. |
-| `agent_base` | `base_agent` · `agent_registry` | Ciclo de vida de los agentes y registro central para el orquestador. |
-| `skill_base` | `base_skill` · `skill_registry` | Contrato de entrada/salida y registro de skills. |
-| `memory` | `short_term` · `long_term` · `memory_manager` | Contexto de sesión, memoria persistente y API única de acceso. |
-| `llm_gateway` | `provider_router` · `cost_tracker` | Abstrae el proveedor de LLM y registra tokens/costo por llamada. |
-| `security` | `permissions` · `guardrails` | Mínimo privilegio por agente/skill y validación de entradas/salidas. |
-| `observability` | `tracer` · `logger` | Traza cada decisión y llamada; logging centralizado. |
+| Capa | Responsabilidad |
+|---|---|
+| `interfaces/` | Puntos de entrada para API, CLI y futura interfaz visual/cámara. |
+| `core/orchestrator/` | Enruta tareas, organiza su ejecución y coordina agentes. |
+| `agents/` | Componen skills para realizar un escaneo, elevar especificidad o desambiguar. |
+| `skills/` | Unidades con contratos definidos para normalizar, clasificar, extraer rasgos, refinar y validar. |
+| `tools/` | Adaptadores puros a servicios externos, como el proveedor de visión. |
+| `core/memory/` | Maneja contexto de sesión y memoria de resultados. |
+| `core/llm_gateway/` | Abstrae proveedores de modelos y seguimiento de costos. |
+| `core/security/` | Aplica permisos y guardrails. |
+| `core/observability/` | Registra trazas y eventos para facilitar auditoría y depuración. |
+| `config/` | Declara agentes y skills activos, entornos y taxonomía. |
+| `evaluations/` | Aloja pruebas de skills y benchmarks de agentes. |
 
-### 🤖 `agents/`
-Un **subdirectorio por agente**. Cada uno implementa la clase base de agente (`BaseAgent`) y declara su propio `manifest.yaml` con las **skills que requiere** y los **permisos que necesita**.
+### Agentes
 
-| Agente | Skills requeridas | Permisos |
-|--------|-------------------|----------|
-| `research_agent` | `web_search`, `document_generator` | `network_access` |
-| `coding_agent` | `code_executor` | `code_execution` |
+| Agente | Responsabilidad | Skills principales |
+|---|---|---|
+| `scan_agent` | Coordina el pipeline principal de escaneo. | `mark_parser`, `target_classifier`, `feature_extractor`, `specificity_enhancer`, `scan_validator` |
+| `specificity_agent` | Refina un resultado y, si está permitido, verifica faltantes con fuentes externas. | `specificity_enhancer`, `scan_validator`, `reference_lookup` |
+| `context_agent` | Desempata candidatos con señales de sesión o entorno, sin mezclarlas con evidencia visual. | `context_aggregator`, `reference_lookup` |
 
-### 🧩 `skills/`
-**Capacidades reutilizables entre agentes.** Cada skill es determinística, sin estado propio, y declara su contrato de entrada/salida en su manifiesto.
+### Skills activas
 
-| Skill | Entrada | Salida | Permisos |
-|-------|---------|--------|----------|
-| `web_search` | `query` | `results[]` | network |
-| `code_executor` | `code`, `language` | `stdout`, `stderr` | `code_execution` |
-| `db_query` | `sql` | `rows[]` | `db_read` |
-| `document_generator` | `content`, `format` | `file_path` | — |
+Las siguientes skills están declaradas en `kiroshi-optics/config/skills.yaml`. Sus implementaciones siguen pendientes.
 
-### 🔌 `tools/`
-Integraciones externas puras — clientes de API como GitHub o Slack — **sin ninguna lógica de agente ni de orquestación**.
+| Skill | Función |
+|---|---|
+| `mark_parser` | Normaliza entradas como regiones de imagen, texto o archivos a un formato común. |
+| `target_classifier` | Clasifica el objetivo en la jerarquía de la taxonomía y estima ambigüedad. |
+| `feature_extractor` | Extrae los rasgos visuales necesarios para diferenciar candidatos. |
+| `specificity_enhancer` | Intenta elevar el nivel de detalle sin aceptar atributos carentes de evidencia directa. |
+| `scan_validator` | Verifica coherencia taxonómica y es la única skill autorizada para aceptar un escaneo. |
+| `context_aggregator` | Usa contexto para ordenar candidatos empatados, separado de los atributos observados. |
+| `reference_lookup` | Verifica rasgos faltantes con referencias externas; requiere permiso de red. |
 
-### ⚙️ `config/`
-Define **qué agentes y skills están activos** y la **configuración por entorno** (desarrollo, producción).
+### Taxonomía y aceptación
 
-```yaml
-# config/agents.yaml
-active_agents:
-  - research_agent
-  - coding_agent
+La taxonomía de `kiroshi-optics/config/taxonomy.yaml` organiza las clases en cinco niveles, de clase general a instancia. Los pesos actuales son L1 `0.15`, L2 `0.25`, L3 `0.30`, L4 `0.20` y L5 `0.10`. El validador usa una especificidad mínima predeterminada de `0.55`, declarada en su manifiesto. Estos valores son parte del diseño actual y podrán ajustarse con evaluaciones.
+
+## Estructura del repositorio
+
+El proyecto de ópticas está en `kiroshi-optics/`. `mi-framework-ia/` es otro directorio del repositorio con un framework de ejemplo; no es el núcleo de Kiroshi.
+
+```text
+Proyecto-Kiroshi/
+├── README.md
+├── crear_estructura_framework.py
+├── kiroshi-optics/
+│   ├── agents/                 # scan_agent, specificity_agent, context_agent
+│   ├── config/                 # agentes, skills, entornos y taxonomía
+│   ├── core/
+│   │   ├── agent_base/
+│   │   ├── llm_gateway/
+│   │   ├── memory/
+│   │   ├── observability/
+│   │   ├── orchestrator/
+│   │   ├── security/
+│   │   └── skill_base/
+│   ├── docs/                   # arquitectura, manifiestos y contratos de prompts
+│   ├── evaluations/            # benchmarks y pruebas de skills
+│   ├── interfaces/             # API, CLI e interfaz visual por desarrollar
+│   ├── skills/                 # skills de escaneo y desambiguación
+│   └── tools/                  # integraciones; cliente de visión pendiente
+└── mi-framework-ia/            # framework de ejemplo independiente
 ```
 
-### 🧪 `evaluations/`
-Casos de prueba y benchmarks que verifican que un **cambio de prompt o de skill no rompe** el comportamiento esperado de un agente. Suele omitirse al inicio — es la **causa más común de regresiones silenciosas**.
+## Principios de diseño
 
-### 🚪 `interfaces/`
-**Puntos de entrada externos**: API HTTP, CLI y una posible interfaz de chat, todos consumiendo al orquestador.
+1. **Evidencia antes que inferencia:** si un atributo no es visible o verificable, se reporta como faltante.
+2. **Aceptación controlada:** solo `scan_validator` puede aprobar un resultado.
+3. **Captura desacoplada:** las skills de análisis reciben un `Mark` normalizado, no dependen de una cámara específica.
+4. **Contexto separado:** señales contextuales pueden ayudar a desambiguar, pero no se presentan como rasgos observados.
+5. **Permisos explícitos:** el acceso a red y otras capacidades se declaran en los manifiestos.
+6. **Trazabilidad:** las decisiones relevantes deben poder revisarse mediante el sistema de observabilidad.
+7. **Privacidad:** el tratamiento de imágenes, texto y señales de entorno deberá limitarse a lo necesario para la función solicitada.
 
-### 📄 `docs/`
-Documentación técnica: arquitectura (`architecture.md`) y esquema de manifiestos (`manifest_schema.md`).
+## Desarrollo
 
----
+El repositorio todavía no ofrece un comando para ejecutar una experiencia funcional de Kiroshi: los puntos de entrada y varias implementaciones son esqueletos. Para contribuir, se puede comenzar por implementar una skill según su manifiesto, conectar su integración en `tools/`, y añadir casos de evaluación en `kiroshi-optics/evaluations/`.
 
-## 📝 El manifiesto de agente/skill
+Documentación técnica:
 
-Cada agente y skill **declara, en lugar de solo implementar**, su contrato. Ejemplo real generado por el script:
-
-```yaml
-# agents/research_agent/manifest.yaml
-name: research_agent
-version: 0.1.0
-description: Investiga un tema y produce un resumen con fuentes
-skills_required: [web_search, document_generator]
-permissions: [network_access]
-input_schema: {}
-output_schema: {}
-```
-
-Esto permite tres cosas:
-
-1. **El orquestador decide a quién delegar** sin inspeccionar código.
-2. **Agentes y skills se versionan de forma independiente.**
-3. **Se puede auditar qué tiene acceso a qué** — especialmente relevante cuando una skill tiene permisos de escritura o ejecución de código.
-
----
-
-## 🚀 Cómo usar el generador
-
-El script `crear_estructura_framework.py` crea todas las carpetas y archivos base (`.py`, `.yaml` y `.md`) en **una sola ejecución**. Es **idempotente**: si un archivo ya existe, lo omite en lugar de sobrescribirlo.
-
-### Ejecución
-
-```bash
-# 1. Crea la carpeta "mi-framework-ia" en el directorio actual
-python3 crear_estructura_framework.py
-
-# 2. O con un nombre específico
-python3 crear_estructura_framework.py mi-framework-ia
-
-# 3. O en una ruta absoluta
-python3 crear_estructura_framework.py /home/esteban/proyectos/mi-framework-ia
-```
-
-> 💡 **Windows**: reemplaza `python3` por `python` si tu instalación no registra el alias `python3`.
-
-Al finalizar, el script imprime en consola **cada archivo creado** y la **ruta absoluta final** del proyecto.
-
----
-
-## ⚠️ Errores comunes a evitar
-
-| Error | Por qué evitarlo |
-|-------|------------------|
-| 🧠 **Skills con estado escondido** | Si una skill guarda información entre llamadas sin pasar por `memory_manager`, se rompe la composabilidad y la trazabilidad. |
-| 🔌 **Orquestador acoplado a un proveedor de LLM** | Por eso existe `llm_gateway` como capa separada: cambiar de proveedor no debería requerir tocar agentes ni orquestador. |
-| 🧪 **Ausencia de evaluaciones automatizadas** | Un cambio de prompt puede romper silenciosamente el comportamiento de un agente; sin benchmarks en `evaluations/`, el problema se detecta hasta producción. |
-| 🔐 **Seguridad como ocurrencia tardía** | `permissions` y `guardrails` deben existir desde el primer agente con red o ejecución de código, no agregarse cuando ya hay diez skills sin restricciones. |
-
----
-
-## 📄 Licencia
-
-MIT © [Esteban]()
-
----
-
-<div align="center">
-
-**¿Encontraste un bug o tienes una mejora?** Abre un [issue](https://github.com/esteban) o envía un *pull request*.
-
-</div>
-# frameworkIa
+- [Arquitectura](kiroshi-optics/docs/architecture.md)
+- [Esquema de manifiestos](kiroshi-optics/docs/manifest_schema.md)
+- [Contratos de prompts](kiroshi-optics/docs/prompt_contracts.md)

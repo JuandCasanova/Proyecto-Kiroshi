@@ -12,6 +12,7 @@ import numpy as np
 from interfaces.hud.effects import CyberpunkEffects
 from interfaces.hud.face_scanner import MediaPipeFaceScanner
 from interfaces.hud.hand_scanner import HandScanResult, MediaPipeHandScanner
+from interfaces.hud.object_scanner import ObjectDetection, YoloSegmentationScanner
 from interfaces.hud.zoom_control import ZoomGestureController, ZoomGestureStatus
 
 
@@ -20,19 +21,15 @@ RED = (40, 55, 255)
 WHITE = (220, 245, 245)
 PANEL = (18, 28, 31)
 
-NPC_NAMES = ("Unknown V", "Maelstrom Goon", "Netrunner", "Afterlife Merc")
-AFFILIATIONS = ("Arasaka", "Militech", "Tyger Claws", "Nomads", "No affiliation")
-THREATS = ("LOW", "MEDIUM", "HIGH", "EXTREME")
-WEAKNESSES = ("Thermal", "EMP", "Cyberware malfunction", "Unknown")
+NPC_NAMES = ("PERSONA",)
+AFFILIATIONS = ("UNIMINUTO",)
 
 
 @dataclass(frozen=True)
 class FictionalProfile:
     name: str
     affiliation: str
-    threat: str
     bounty: int
-    weakness: str
 
 
 class KiroshiHUD:
@@ -60,6 +57,9 @@ class KiroshiHUD:
         self._danger_mode = False
         self._glitch_enabled = True
         self._scan_mode = False
+        self._object_scanner: YoloSegmentationScanner | None = None
+        self._object_scan_error: str | None = None
+        self._zoom_enabled = False
         self._hand_scanner: MediaPipeHandScanner | None = None
         self._hand_scan_error: str | None = None
         self._zoom_controller = ZoomGestureController()
@@ -78,9 +78,7 @@ class KiroshiHUD:
             self._profiles.append(FictionalProfile(
                 name=random.choice(NPC_NAMES),
                 affiliation=random.choice(AFFILIATIONS),
-                threat=random.choice(THREATS),
                 bounty=random.randrange(1_000, 75_001, 500),
-                weakness=random.choice(WEAKNESSES),
             ))
         return self._profiles[index]
 
@@ -137,7 +135,7 @@ class KiroshiHUD:
             cv2.line(frame, start, end, color, 2, cv2.LINE_AA)
 
         profile = self._profile_for(index)
-        panel_width, panel_height = 224, 104
+        panel_width, panel_height = 224, 85
         panel_x = min(max(x, 6), max(6, frame.shape[1] - panel_width - 6))
         panel_y = y - panel_height - 8
         if panel_y < 36:
@@ -153,14 +151,10 @@ class KiroshiHUD:
         )
         self._draw_text(frame, "SIMULATED // NOT IDENTIFIED", (panel_x + 7, panel_y + 15), color, 0.34)
         self._draw_text(frame, f"NAME: {profile.name}", (panel_x + 7, panel_y + 34), WHITE, 0.39)
-        self._draw_text(
-            frame, f"THREAT: {profile.threat}  AFFIL: {profile.affiliation}",
-            (panel_x + 7, panel_y + 52), WHITE, 0.31,
-        )
+        self._draw_text(frame, f"AFFIL: {profile.affiliation}", (panel_x + 7, panel_y + 52), WHITE, 0.34)
         self._draw_text(frame, f"BOUNTY: ${profile.bounty:,} EDDIES", (panel_x + 7, panel_y + 70), WHITE, 0.34)
-        self._draw_text(frame, f"WEAKNESS: {profile.weakness}", (panel_x + 7, panel_y + 89), WHITE, 0.34)
 
-    def _draw_status(self, frame: np.ndarray, face_count: int) -> None:
+    def _draw_status(self, frame: np.ndarray, face_count: int, object_count: int) -> None:
         height, width = frame.shape[:2]
         color = self._accent
         self._draw_text(frame, "KIROSHI OPTICS v3.2.1 // CONNECTED", (30, 34), color, 0.55, 1)
@@ -178,26 +172,55 @@ class KiroshiHUD:
             (bar_x + max(1, int((bar_width - 2) * progress)), bar_y + 7),
             color, -1,
         )
-        self._draw_text(frame, f"SCANNING...  TARGETS {face_count:02d}", (bar_x + bar_width + 12, height - 23), color, 0.4)
         self._draw_text(
             frame,
-            "E: SCAN   C: COLOR   G: GLITCH   Q: EXIT",
-            (max(30, width - 380), height - 23),
-            WHITE,
+            (
+                f"SCANNING...  PERSONS {face_count:02d}  OBJECTS {object_count:02d}"
+                if self._scan_mode
+                else f"PERSONS {face_count:02d}  //  OBJECT SCAN OFF"
+            ),
+            (bar_x + bar_width + 12, height - 23),
+            color,
             0.35,
         )
-        if self._hand_scan_error:
+        self._draw_text(
+            frame,
+            (
+                f"E: SCAN {'ON' if self._scan_mode else 'OFF'}  "
+                f"Z: ZOOM {'ON' if self._zoom_enabled else 'OFF'}  "
+                "C: COLOR  G: GLITCH  Q: EXIT"
+            ),
+            (max(30, width - 500), height - 42),
+            WHITE,
+            0.32,
+        )
+        if self._object_scan_error and (
+            self._scan_mode or self._object_scanner is None
+        ):
+            self._draw_text(
+                frame,
+                f"OBJECT SCAN: {self._object_scan_error[:90]}",
+                (30, 78),
+                RED,
+                0.36,
+            )
+        elif self._hand_scan_error:
             self._draw_text(frame, f"SCAN: {self._hand_scan_error[:90]}", (30, 78), RED, 0.36)
         elif self._scan_mode:
-            status = (
-                f"SCAN // {self._zoom_status.message} "
-                f"{self._zoom_status.progress * 100:03.0f}% "
-                f"ZOOM {self._zoom_status.zoom:.2f}X"
-            )
-            self._draw_text(frame, status, (30, 78), self._accent, 0.38)
-            bar_x, bar_y, bar_width = 30, 87, 220
-            cv2.rectangle(frame, (bar_x, bar_y), (bar_x + bar_width, bar_y + 6), WHITE, 1)
-            if self._zoom_status.progress > 0:
+            scan_status = "OBJECT SCAN // ACTIVE"
+            if self._zoom_enabled:
+                scan_status = (
+                    f"ZOOM // {self._zoom_status.message} "
+                    f"{self._zoom_status.progress * 100:03.0f}% "
+                    f"{self._zoom_status.zoom:.2f}X"
+                )
+            if self._object_scanner is not None:
+                scan_status = f"{scan_status} // {self._object_scanner.device_name}"
+            self._draw_text(frame, scan_status, (30, 78), self._accent, 0.38)
+            if self._zoom_enabled:
+                bar_x, bar_y, bar_width = 30, 87, 220
+                cv2.rectangle(frame, (bar_x, bar_y), (bar_x + bar_width, bar_y + 6), WHITE, 1)
+            if self._zoom_enabled and self._zoom_status.progress > 0:
                 cv2.rectangle(
                     frame,
                     (bar_x + 1, bar_y + 1),
@@ -245,6 +268,35 @@ class KiroshiHUD:
         for point in (result.thumb_tip, result.index_tip):
             cv2.circle(frame, point, 9, color, 2, cv2.LINE_AA)
 
+    def _draw_objects(
+        self,
+        frame: np.ndarray,
+        detections: tuple[ObjectDetection, ...],
+    ) -> None:
+        labels = {
+            "person": "PERSONA",
+            "bottle": "BOTELLA",
+            "cup": "TAZA/POCILLO",
+            "laptop": "LAPTOP",
+            "keyboard": "TECLADO",
+            "tv": "PANTALLA/TV",
+            "cat": "GATO",
+            "dog": "PERRO",
+            "teddy bear": "JUGUETE (PELUCHE)",
+        }
+        for detection in detections:
+            x, y, width, height = detection.box
+            color = self._accent
+            contour = np.asarray(detection.contour, dtype=np.int32).reshape((-1, 1, 2))
+            cv2.polylines(frame, [contour], True, color, 2, cv2.LINE_AA)
+            text = f"{labels.get(detection.category, detection.category.upper())} {detection.score:.0%}"
+            text_y = max(18, y - 6)
+            self._draw_text(frame, text, (x, text_y), color, 0.38)
+
+        summary = YoloSegmentationScanner.computer_setup_summary(detections)
+        if summary:
+            self._draw_text(frame, summary, (30, 108), self._accent, 0.38)
+
     def run(self) -> None:
         """Ejecuta el visor hasta pulsar q; libera los recursos al salir."""
         try:
@@ -261,23 +313,35 @@ class KiroshiHUD:
                     self._fps = instant_fps if self._fps == 0 else self._fps * 0.88 + instant_fps * 0.12
 
                 hand_result = None
-                if self._scan_mode and self._hand_scanner is not None:
+                if self._zoom_enabled and self._hand_scanner is not None:
                     hand_result = self._hand_scanner.detect(frame)
                     self._zoom_status = self._zoom_controller.update(
                         hand_result.finger_gap_ratio if hand_result else None,
                         now,
                     )
 
-                if self._scan_mode:
+                if self._zoom_enabled:
                     self._draw_hand_gesture(frame, hand_result)
-                frame = self._apply_zoom(frame, self._zoom_controller.zoom)
+                frame = self._apply_zoom(
+                    frame,
+                    self._zoom_controller.zoom if self._zoom_enabled else 1.0,
+                )
+                object_detections: tuple[ObjectDetection, ...] = ()
+                if self._scan_mode and self._object_scanner is not None:
+                    try:
+                        self._object_scanner.submit(frame, now)
+                    except RuntimeError as exc:
+                        self._object_scan_error = str(exc)
+                    object_detections, self._object_scan_error = self._object_scanner.snapshot()
                 frame = self._effects.apply(frame, self._danger_mode, self._glitch_enabled)
                 boxes = self._scanner.detect(frame)
+                if self._scan_mode:
+                    self._draw_objects(frame, object_detections)
                 for index, box in enumerate(boxes):
                     self._draw_face(frame, box, index)
                 self._draw_reticle(frame)
                 self._draw_frame_corners(frame)
-                self._draw_status(frame, len(boxes))
+                self._draw_status(frame, len(boxes), len(object_detections))
 
                 cv2.imshow("KIROSHI OPTICS // HUD SIMULATION", frame)
                 key = cv2.waitKey(1) & 0xFF
@@ -290,13 +354,28 @@ class KiroshiHUD:
                 if key == ord("e"):
                     if self._scan_mode:
                         self._scan_mode = False
+                        self._zoom_enabled = False
+                        self._hand_scan_error = None
+                    else:
+                        try:
+                            if self._object_scanner is None:
+                                self._object_scanner = YoloSegmentationScanner()
+                                self._resources.callback(self._object_scanner.close)
+                            self._object_scan_error = None
+                            self._scan_mode = True
+                        except RuntimeError as exc:
+                            self._object_scan_error = str(exc)
+                if key == ord("z") and self._scan_mode:
+                    if self._zoom_enabled:
+                        self._zoom_enabled = False
+                        self._hand_scan_error = None
                     else:
                         try:
                             if self._hand_scanner is None:
                                 self._hand_scanner = MediaPipeHandScanner()
                                 self._resources.callback(self._hand_scanner.close)
                             self._hand_scan_error = None
-                            self._scan_mode = True
+                            self._zoom_enabled = True
                         except RuntimeError as exc:
                             self._hand_scan_error = str(exc)
         finally:

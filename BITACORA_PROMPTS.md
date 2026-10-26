@@ -136,11 +136,6 @@ disponible el texto exacto de todos ellos.
 ### OCR y traduccion local con Tesseract y Argos
 
 **Prompts del usuario conservados**
-
-> Dice que faltan los clientes de google cloud
-
-> Se supone que ya está instlado
-
 > Tresseract necesita los datos de idioma eng y spa. Instala english y spanish
 > en treseract 0
 
@@ -264,14 +259,6 @@ conserva palabra por palabra.
 
 > Guarda los prompts que te hice junto con tus respuetsas en la carpeta "docs"
 
-> No, agrega todo lo que hicimos mucho más antes, incluido el codigo madre que
-> te di para empezar a crear el proyecto, elimina el archivo "architecture.md"
-> y agrega los prompts al archivo "BITACORA_PROMPTS.md"
-
-> no veo la actualización del archivo "BITACORA_PROMPTS"
-
-> VALE
-
 **Trabajo registrado**
 
 - El primer archivo de historial se creó en `kiroshi-optics/docs`, pero el
@@ -281,3 +268,109 @@ conserva palabra por palabra.
   entradas originales del 18 de octubre y añadiendo el prompt madre y el
   historial ampliado.
 - `kiroshi-optics/docs/architecture.md` se eliminó a petición del usuario.
+
+### Objetivo de escaneo de alta fidelidad y modelo general
+
+**Prompts del usuario**
+
+> Dejemos eso de lado, el objetivo principal del proyecto es el escaneo de
+> objetos con la mayor fidelidad posible, que tecnológias se podrian usar para
+> ese objetivo?, la idea es que sepa diferenciar con la mayor exactitud posible
+> como por ejemplo entre una botella de agua y una botella de juego, un hombre
+> o mujer, un pc de mesa o una laptop, etc
+
+> El HUD debe detectar con exactitud cosas como un hombre (cabello corto,
+> cuerpo ancho, etc), de una mujer (cabello largo, cara mas pequeña, caderas,
+> etc), la detección de bebidas dejalas en diferenciar botellas de tazas o
+> pocillos, con lo de los ordenadores, que se intente detecar una laptop, una
+> pc con torre pero que detecte la torre, monitor y teclado, en un solo
+> conjunto, si no, es una laptop, y si el teclado es aparte del monitor es un
+> todo en uno
+
+**Aclaraciones elegidas**
+
+- Para personas: detectar persona y describir solo rasgos visibles, sin
+  asignar género.
+- Para equipos: laptop integrada; torre + monitor + teclado como conjunto;
+  todo-en-uno significa ordenador integrado en el monitor y teclado separado.
+- Para comenzar, probar primero un modelo genérico y medir sus errores.
+
+**Respuesta y trabajo registrados**
+
+- Se explicó que los rasgos descritos no permiten deducir de forma fiable el
+  género de una persona; el detector base marca «persona» y no asigna género.
+- Se añadió `interfaces/hud/object_scanner.py` con MediaPipe Object Detector
+  y EfficientDet-Lite2 int8, usando el flujo de cámara que OpenCV recibe de
+  Iriun. El modelo procesa muestras asíncronas limitadas para no acumular
+  fotogramas.
+- El modelo genérico puede marcar persona, botella, taza, laptop, teclado y
+  TV/pantalla. No detecta torre ni distingue de forma fiable un equipo
+  todo-en-uno de una pantalla externa. Si encuentra pantalla y teclado
+  alineados, los presenta como componentes y deja explícito que torre/AIO no
+  están confirmados.
+- Se documentó el alcance y estas limitaciones en `kiroshi-optics/README.md`.
+- Se verificaron compilación, importación, `pip check`, carga real del modelo
+  e inferencia asíncrona con un fotograma sintético. No se validó precisión
+  frente a una cámara real ni se entrenó un conjunto de datos propio.
+
+### Añadir animales y juguete al escaner
+
+**Prompt del usuario**
+
+> Agregale al escaner que identifique animales como perro, gato y un jueguete
+
+**Trabajo registrado**
+
+- Se añadieron las clases COCO `dog`, `cat` y `teddy bear` a la lista de
+  categorías admitidas por MediaPipe EfficientDet-Lite2.
+- El HUD las muestra como `PERRO`, `GATO` y `JUGUETE (PELUCHE)`.
+- El modelo base no ofrece una clase genérica para todos los juguetes; la
+  etiqueta de juguete corresponde específicamente a peluche/osito.
+
+### Separar escaneo de objetos y zoom manual
+
+**Prompt del usuario**
+
+> Mete los reconocimientos de objetos dentro del modo escaneo (E) y para que
+> no haya interferencia con el zoom manual, el zoom solo se activa si se
+> presiona Z cuando el modo de escaneo está activo, si está fuera del modo de
+> escaneo, la Z no funcionará
+
+**Trabajo registrado**
+
+- El reconocimiento y los overlays de objetos quedan activos únicamente al
+  entrar al modo `E`; el detector se inicializa de forma diferida al activar
+  ese modo.
+- El control manual de zoom requiere activar `Z` dentro del modo `E`. `Z` no
+  tiene efecto fuera del escaneo.
+- Al salir de `E`, el zoom manual también se desactiva.
+
+### Contornos de silueta y aceleracion grafica
+
+**Prompt del usuario**
+
+> Ejecuta la idea y si es posible, usa la tarjeta grafica de la computadora
+
+**Trabajo registrado**
+
+- Se sustituyo el detector de cajas por YOLO11n-seg, que entrega una mascara
+  por instancia y permite dibujar el contorno del objeto detectado.
+- Se conservan las categorias admitidas y el muestreo asincrono para evitar
+  bloquear la interfaz o acumular fotogramas.
+- El detector selecciona CUDA cuando PyTorch informa que una GPU NVIDIA esta
+  disponible y usa CPU como alternativa; el estado del dispositivo aparece en
+  el HUD.
+
+### Simplificar datos del panel facial
+
+**Prompt del usuario**
+
+> Elimina los Threats, weakness de hud.py, y en affiliations coloca UNIMINUTO
+
+**Trabajo registrado**
+
+- Se eliminaron los campos de amenaza y debilidad del perfil y del panel
+  facial.
+- La afiliacion mostrada ahora es fija: `UNIMINUTO`.
+- Se redujo la altura del panel y se actualizo el README para describir los
+  datos restantes como etiqueta, afiliacion y recompensa ficticia.

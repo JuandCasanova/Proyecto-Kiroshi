@@ -1,0 +1,253 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#080b10">
+    <title>Ópticas Kiroshi | Escáner visual</title>
+    <link rel="stylesheet" href="./styles.css">
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="sidebar">
+        <a class="brand" href="#scanner" aria-label="Ópticas Kiroshi, escáner visual">
+          <span class="brand-mark" aria-hidden="true">K</span>
+          <span><strong>KIROSHI</strong><small>VISION SYSTEMS</small></span>
+        </a>
+
+        <p class="nav-label">SISTEMA DE VISIÓN</p>
+        <nav class="main-nav" aria-label="Navegación principal">
+          <button class="nav-item is-active" type="button" data-screen="scanner" aria-current="page">
+            <span class="nav-icon" aria-hidden="true">⌖</span> Escáner
+            <span class="nav-index">01</span>
+          </button>
+          <button class="nav-item" type="button" data-screen="analysis">
+            <span class="nav-icon" aria-hidden="true">◌</span> Análisis activo
+            <span class="nav-index">02</span>
+          </button>
+          <button class="nav-item" type="button" data-screen="result">
+            <span class="nav-icon" aria-hidden="true">▤</span> Resultado
+            <span class="nav-index">03</span>
+          </button>
+          <button class="nav-item" type="button" data-screen="history">
+            <span class="nav-icon" aria-hidden="true">◷</span> Historial
+            <span class="nav-index">04</span>
+          </button>
+          <button class="nav-item" type="button" data-screen="camera">
+            <span class="nav-icon" aria-hidden="true">◎</span> Cámara y permisos
+            <span class="nav-index">05</span>
+          </button>
+        </nav>
+
+        <div class="sidebar-bottom">
+          <div class="privacy-note">
+            <span class="privacy-icon" aria-hidden="true">◈</span>
+            <div><strong>ENTRADA DE VIDEO</strong><small>Solo cámara del equipo</small></div>
+          </div>
+          <div class="profile">
+            <span class="profile-avatar" aria-hidden="true">K</span>
+            <span><strong>Estación local</strong><small>Prototipo de interfaz</small></span>
+            <span class="online-dot" title="Interfaz disponible"></span>
+          </div>
+        </div>
+      </aside>
+
+      <main class="workspace">
+        <header class="topbar">
+          <div class="breadcrumb"><span>KIROSHI /</span> <strong id="screen-breadcrumb">ESCÁNER VISUAL</strong></div>
+          <div class="topbar-meta">
+            <span class="demo-badge"><span></span> PROTOTIPO · DATOS DE MUESTRA</span>
+            <span class="topbar-date" id="clock">--:--:--</span>
+          </div>
+        </header>
+
+        <section class="screen is-visible" id="screen-scanner" aria-labelledby="scanner-title">
+          <div class="page-heading">
+            <div>
+              <p class="eyebrow">INTERFAZ DE CAPTURA <span>// 01</span></p>
+              <h1 id="scanner-title">Escáner visual</h1>
+              <p class="subheading">Encuadra un objeto y marca la región que quieres analizar.</p>
+            </div>
+            <div class="source-chip"><span class="source-led"></span><span id="camera-status">CÁMARA: SIN CONECTAR</span></div>
+          </div>
+
+          <div class="scanner-layout">
+            <div class="camera-column">
+              <div class="panel camera-panel">
+                <div class="panel-heading">
+                  <div><span class="live-dot"></span><span>VISTA DE CÁMARA</span></div>
+                  <span class="panel-micro">ENTRADA · WEBCAM PREDETERMINADA</span>
+                </div>
+                <div class="camera-stage" id="camera-stage">
+                  <video id="camera-video" autoplay playsinline muted aria-label="Vista previa de la cámara del equipo"></video>
+                  <div class="camera-placeholder" id="camera-placeholder">
+                    <div class="placeholder-orbit" aria-hidden="true"><span>⌖</span></div>
+                    <p class="placeholder-title">La señal de cámara aún no está activa</p>
+                    <p>Conecta la cámara predeterminada del equipo para mostrar la vista previa.</p>
+                    <button class="button button-secondary" id="connect-camera" type="button">ACTIVAR CÁMARA</button>
+                  </div>
+                  <div class="camera-overlay" aria-hidden="true">
+                    <span class="corner corner-tl"></span><span class="corner corner-tr"></span>
+                    <span class="corner corner-bl"></span><span class="corner corner-br"></span>
+                    <div class="reticle"><span></span><i></i></div>
+                    <span class="overlay-coord overlay-top">OBJETO / ROI</span>
+                    <span class="overlay-coord overlay-bottom">MARCA UNA REGIÓN PARA CONTINUAR</span>
+                    <div class="selection-box" id="selection-box"><span>REGIÓN MARCADA</span></div>
+                  </div>
+                  <div class="camera-error" id="camera-error" role="alert" hidden></div>
+                  <span class="camera-tag"><span class="live-dot"></span> VISTA LOCAL</span>
+                </div>
+                <div class="camera-controls">
+                  <div class="camera-hint"><span class="hint-icon">↖</span> Arrastra sobre la vista para marcar un objeto</div>
+                  <button class="icon-button" id="stop-camera" type="button" title="Desconectar cámara" aria-label="Desconectar cámara" disabled>■</button>
+                </div>
+              </div>
+
+              <div class="panel selection-panel">
+                <div class="selection-copy">
+                  <span class="selection-icon" aria-hidden="true">⌗</span>
+                  <span><strong id="selection-label">Ninguna región marcada</strong><small id="selection-help">Activa la cámara y arrastra para seleccionar un área.</small></span>
+                </div>
+                <button class="button button-primary" id="start-analysis" type="button" disabled>
+                  <span aria-hidden="true">⌖</span> INICIAR ESCANEO
+                </button>
+              </div>
+            </div>
+
+            <aside class="details-column">
+              <div class="panel info-panel">
+                <div class="panel-heading"><span>ESTADO DEL SISTEMA</span><span class="status-code">SYS / 01</span></div>
+                <div class="status-row"><span class="status-symbol">◉</span><span><strong>Fuente de imagen</strong><small>Cámara predeterminada del equipo</small></span><b id="source-value">PENDIENTE</b></div>
+                <div class="status-row"><span class="status-symbol muted">◇</span><span><strong>Región objetivo</strong><small>Selección manual en la vista</small></span><b id="region-value">VACÍA</b></div>
+                <div class="status-row"><span class="status-symbol muted">⟲</span><span><strong>Clasificador</strong><small>Integración aún no disponible</small></span><b class="demo-text">DEMO</b></div>
+              </div>
+
+              <div class="panel protocol-panel">
+                <div class="panel-heading"><span>PROTOCOLO DE ESCANEO</span><span class="status-code">PIPELINE</span></div>
+                <ol class="pipeline-list">
+                  <li class="pipeline-current"><span>01</span><div><strong>Marcar región</strong><small>Selección del usuario</small></div><i>ACTUAL</i></li>
+                  <li><span>02</span><div><strong>Clasificar objetivo</strong><small>Proponer categoría visual</small></div></li>
+                  <li><span>03</span><div><strong>Verificar atributos</strong><small>Registrar evidencia y ausencias</small></div></li>
+                  <li><span>04</span><div><strong>Validar especificidad</strong><small>Umbral del proyecto: 0.55</small></div></li>
+                </ol>
+              </div>
+
+              <div class="notice-card">
+                <span aria-hidden="true">i</span>
+                <p><strong>Prototipo de interfaz</strong> La cámara muestra video en vivo. El análisis visual real todavía no está conectado; los resultados de ejemplo están identificados como demostración.</p>
+              </div>
+            </aside>
+          </div>
+        </section>
+
+        <section class="screen" id="screen-analysis" aria-labelledby="analysis-title" hidden>
+          <div class="page-heading">
+            <div><p class="eyebrow">FLUJO DE ANÁLISIS <span>// 02</span></p><h1 id="analysis-title">Escaneo activo</h1><p class="subheading">Vista de ejemplo del proceso entre la selección y la validación.</p></div>
+            <span class="demo-badge"><span></span> ESTADO SIMULADO</span>
+          </div>
+          <div class="analysis-grid">
+            <div class="panel analysis-preview">
+              <div class="panel-heading"><span>REGIÓN OBJETIVO</span><span class="panel-micro">DATOS DE DEMOSTRACIÓN</span></div>
+              <div class="demo-object" aria-hidden="true"><div class="mug"><span></span></div><div class="object-reticle"></div></div>
+              <div class="target-caption"><span>OBJETO ENCUADRADO</span><strong>Muestra ilustrativa · taza</strong></div>
+              <button class="button button-secondary" type="button" data-screen="scanner">VOLVER AL ESCÁNER</button>
+            </div>
+            <div class="panel analysis-steps">
+              <div class="panel-heading"><span>SECUENCIA DEL PIPELINE</span><span class="status-code">4 FASES</span></div>
+              <div class="progress-track"><span></span></div>
+              <ol class="analysis-list">
+                <li class="done"><b>01</b><span><strong>Marca normalizada</strong><small>Región de imagen definida por el usuario</small></span><i>COMPLETO</i></li>
+                <li class="done"><b>02</b><span><strong>Clasificación propuesta</strong><small>Categorías candidatas, sin inferir rasgos faltantes</small></span><i>COMPLETO</i></li>
+                <li class="current"><b>03</b><span><strong>Extracción de atributos</strong><small>Solo discriminadores observables</small></span><i>DEMOSTRACIÓN</i></li>
+                <li><b>04</b><span><strong>Validación</strong><small>Aprobación exclusiva del validador</small></span><i>PENDIENTE</i></li>
+              </ol>
+              <div class="analysis-footnote">Esta secuencia es ilustrativa; no se está ejecutando un modelo de visión.</div>
+            </div>
+          </div>
+          <div class="panel action-strip"><span>Cuando el pipeline esté implementado, esta pantalla mostrará su estado real.</span><button class="button button-primary" type="button" data-screen="result">VER RESULTADO DE MUESTRA <span aria-hidden="true">→</span></button></div>
+        </section>
+
+        <section class="screen" id="screen-result" aria-labelledby="result-title" hidden>
+          <div class="page-heading">
+            <div><p class="eyebrow">SALIDA DEL VALIDADOR <span>// 03</span></p><h1 id="result-title">Resultado del escaneo</h1><p class="subheading">Ejemplo de cómo se presentará la evidencia cuando exista un clasificador.</p></div>
+            <span class="demo-badge"><span></span> DATOS DE DEMOSTRACIÓN</span>
+          </div>
+          <div class="result-layout">
+            <div class="panel result-main">
+              <div class="result-topline"><span class="result-icon" aria-hidden="true">⌕</span><div><span class="eyebrow">CLASIFICACIÓN ILUSTRATIVA</span><h2>Taza con asa</h2><p>Ejemplo de distinción frente a un vaso común.</p></div></div>
+              <div class="result-metrics">
+                <div><span>CONFIANZA DEL CLASIFICADOR</span><strong>—</strong><small>Modelo aún no conectado</small></div>
+                <div><span>ESPECIFICIDAD EFECTIVA</span><strong>—</strong><small>La calculará el validador</small></div>
+                <div><span>UMBRAL DE ACEPTACIÓN</span><strong>0.55</strong><small>Regla documentada del proyecto</small></div>
+              </div>
+              <div class="evidence-section">
+                <div class="section-title"><span class="evidence-dot observed"></span> ATRIBUTOS OBSERVADOS <small>EJEMPLO</small></div>
+                <div class="evidence-row"><span>Asa lateral</span><b>Visible en la muestra</b></div>
+                <div class="evidence-row"><span>Base plana</span><b>Visible en la muestra</b></div>
+                <div class="section-title missing-title"><span class="evidence-dot missing"></span> NO DETERMINADO <small>NO INFERIR</small></div>
+                <div class="evidence-row"><span>Material exacto</span><b>No verificable en este ejemplo</b></div>
+              </div>
+            </div>
+            <aside class="panel validation-panel">
+              <div class="panel-heading"><span>VALIDACIÓN</span><span class="status-code">GATE</span></div>
+              <div class="validation-mark">?</div>
+              <h3>Esperando integración</h3>
+              <p>Solo el validador del proyecto determina si un escaneo es aceptado.</p>
+              <div class="validation-rule"><span>REGLA</span><strong>Especificidad ≥ 0.55</strong></div>
+              <button class="button button-secondary full-width" type="button" data-screen="scanner">NUEVO ESCANEO</button>
+            </aside>
+          </div>
+        </section>
+
+        <section class="screen" id="screen-history" aria-labelledby="history-title" hidden>
+          <div class="page-heading">
+            <div><p class="eyebrow">REGISTRO LOCAL <span>// 04</span></p><h1 id="history-title">Historial de escaneos</h1><p class="subheading">En esta maqueta no se guarda video ni se persisten resultados.</p></div>
+            <span class="source-chip"><span class="source-led"></span> SOLO ESTA SESIÓN</span>
+          </div>
+          <div class="panel history-panel">
+            <div class="panel-heading"><span>ACTIVIDAD RECIENTE</span><span class="panel-micro">MUESTRA DE INTERFAZ · NO SON ESCANEOS REALES</span></div>
+            <div class="history-empty" id="history-empty">
+              <span class="history-symbol" aria-hidden="true">◷</span>
+              <h2>Aún no hay escaneos</h2>
+              <p>Inicia la cámara y selecciona una región para ver cómo se presenta el flujo.</p>
+              <button class="button button-secondary" type="button" data-screen="scanner">IR AL ESCÁNER</button>
+            </div>
+            <div class="history-table-wrap" id="history-table-wrap" hidden>
+              <table><thead><tr><th>SESIÓN</th><th>OBJETO</th><th>ESTADO</th><th>ORIGEN</th></tr></thead><tbody id="history-rows"></tbody></table>
+            </div>
+          </div>
+        </section>
+
+        <section class="screen" id="screen-camera" aria-labelledby="camera-title" hidden>
+          <div class="page-heading">
+            <div><p class="eyebrow">ENTRADA DE VIDEO <span>// 05</span></p><h1 id="camera-title">Cámara y permisos</h1><p class="subheading">El prototipo solicita solo la cámara predeterminada del navegador.</p></div>
+            <span class="source-chip"><span class="source-led"></span><span id="camera-settings-status">PERMISO PENDIENTE</span></span>
+          </div>
+          <div class="camera-settings-grid">
+            <div class="panel camera-settings-card">
+              <div class="settings-icon" aria-hidden="true">◎</div>
+              <span class="eyebrow">FUENTE ÚNICA</span>
+              <h2>Cámara del equipo</h2>
+              <p>La interfaz no ofrece carga de imágenes o archivos. El navegador puede solicitar permiso para usar la cámara predeterminada.</p>
+              <div class="settings-state"><span class="source-led"></span><span id="camera-settings-detail">Disponibilidad por comprobar</span></div>
+              <button class="button button-primary" id="connect-camera-settings" type="button">COMPROBAR / ACTIVAR CÁMARA</button>
+            </div>
+            <div class="panel permission-card">
+              <div class="panel-heading"><span>SI EL ACCESO NO FUNCIONA</span><span class="status-code">AYUDA</span></div>
+              <ol class="permission-steps">
+                <li><b>01</b><span>Abre esta página desde un origen seguro como <code>localhost</code> o HTTPS.</span></li>
+                <li><b>02</b><span>En el navegador, permite el acceso a la cámara para este sitio.</span></li>
+                <li><b>03</b><span>Cierra otras aplicaciones que puedan estar usando la cámara.</span></li>
+                <li><b>04</b><span>Vuelve a intentar la conexión. El permiso se puede revocar desde la configuración del navegador.</span></li>
+              </ol>
+            </div>
+          </div>
+        </section>
+
+        <footer class="footer"><span>ÓPTICAS KIROSHI <i>·</i> PROTOTIPO DE INTERFAZ</span><span>Sin análisis real conectado <i>·</i> No se guardan imágenes</span></footer>
+      </main>
+    </div>
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+    <script src="./app.js" defer></script>
+  </body>
+</html>

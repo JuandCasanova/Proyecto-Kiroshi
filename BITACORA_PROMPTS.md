@@ -10,4 +10,274 @@
 | 2026-10-18 | Crea en stitch un prototipo del proyecto kiroshi, una parte en la que se ilustre al usuario con los implantes puestos y otra en la que se visualice en primera persona como se veria con los implantes y sus diferentes funciones |
 | 2026-10-18 | Puedes empezar con el prototipo que te pedí anteriormente? |
 | 2026-10-18 | ahora crea la parte de como veria el usuario a través de los implantes, es decir, en primera persona, con sus distintas fuunciones |
-| 2026-10-18 | Finalizo la sesión de hoy, grcias |
+| 2026-10-18 | Finalizo la sesión de hoy, gracias |
+
+---
+
+## Historial ampliado: HUD local, traduccion y gestos
+
+Esta bitacora conserva los prompts originales que siguen disponibles y un
+registro de respuestas y trabajo. Algunos intercambios anteriores se
+recuperaron de un resumen de sesion, no de la transcripcion completa; esos
+fragmentos se identifican como resumen y no como cita literal.
+
+### Prompt madre: simulacion de Kiroshi Optics con webcam
+
+**Prompt del usuario**
+
+> Según la estructura del proyecto, Actúa como un desarrollador experto en
+> Python, Visión por Computadora (OpenCV, MediaPipe) y Diseño de Interfaces de
+> Usuario Futuristicas/HUD.
+>
+> Quiero crear un script en Python que utilice la cámara web de mi computadora
+> para simular las lentes HUD "Kiroshi Optics" de Cyberpunk 2077 en tiempo real.
+>
+> Por favor, genera un proyecto modular con el código completo y los
+> requerimientos siguiendo estas especificaciones:
+>
+> ---
+>
+> ### 1. Requisitos Técnicos y Dependencias
+> - Lenguaje: **Python 3.10+**
+> - Librerías principales: `opencv-python`, `mediapipe`, `numpy`, `pillow` (si
+>   es necesario para fuentes/renderizado).
+> - Crea también un archivo `requirements.txt`.
+>
+> ---
+>
+> ### 2. Funcionalidades Principales (Cyberpunk HUD Features)
+> 1. **Captura de Cámara:** Transmisión de video fluida desde la webcam por
+>    defecto (`cv2.VideoCapture(0)`).
+> 2. **Estética Cyberpunk (Filtro Visual):**
+>    - Tono/Filtro cibernético de alto contraste (tonos amarillos, cian/neón,
+>      rojo/naranja o verde/matriz).
+>    - Simulación de distorsión leve de lente, líneas de escaneo (scanlines) y
+>      efecto VHS/Glitch sutil.
+> 3. **Análisis Cyberware / Escaneo de Rostros:**
+>    - Detectar rostros en pantalla usando MediaPipe u OpenCV.
+>    - Dibujar un recuadro o retícula de apuntado cibernética con esquinas neón
+>      alrededor de cada cara.
+>    - Mostrar datos "ficticios" estilo Cyberpunk junto a la persona detectada:
+>      - **NAME:** [Generar o asignar nombre aleatorio de mercenario/NPC, ej:
+>        "Unknown V", "Maelstrom Goon", "Netrunner"]
+>      - **THREAT LEVEL:** [LOW / MEDIUM / HIGH / EXTREME - dinámico]
+>      - **AFFILIATION:** [Arasaka, Militech, Tyger Claws, Nomads, etc.]
+>      - **BOUNTY:** [Monto en $ / Eddies, ej: $15,000]
+>      - **WEAKNESS:** [Thermal, EMP, Cyberware Malfunction]
+> 4. **Elementos en Pantalla (HUD Overlay):**
+>    - Cruz de apuntado central (Reticle/Crosshair) estilizada.
+>    - Esquinas de encuadre futuristas ("Frame corners").
+>    - Indicadores de estado en los bordes:
+>      - Arriba a la izquierda: `KIROSHI OPTICS v3.2.1 // CONNECTED`
+>      - Arriba a la derecha: FPS actual, fecha/hora ficticia/real y coordenadas
+>        GPS falsas (`N 35°40' / E 139°45'`).
+>      - Abajo: Barra de progreso de "SCANNING..." o registro de logs en vivo.
+> 5. **Controles por Teclado:**
+>    - `'q'`: Salir de la aplicación.
+>    - `'c'`: Cambiar modo de color (Cyan/Yellow vs Red/High Danger mode).
+>    - `'g'`: Activar/Desactivar efecto Glitch/Scanlines.
+>
+> ---
+>
+> ### 3. Requerimientos de Estilo de Código
+> - Organiza el código de forma limpia con funciones claras o una clase
+>   principal `KiroshiHUD`.
+> - Utiliza fuentes sans-serif legibles o la fuente por defecto de OpenCV
+>   (`FONT_HERSHEY_SIMPLES` / `FONT_HERSHEY_DUPLEX`).
+> - Incluye comentarios explicativos en cada bloque de código clave.
+> - Maneja excepciones correctamente por si no se detecta la cámara web.
+>
+> Proporciona la estructura de archivos sugerida y todo el código funcional en
+> una sola respuesta o paso a paso.
+
+**Trabajo y respuesta registrados**
+
+- Se organizó el HUD en módulos bajo `kiroshi-optics/interfaces/hud/`.
+- Se implementaron captura de webcam, detección facial con MediaPipe, efectos,
+  retícula, esquinas de encuadre, datos ficticios, barra de estado y teclas.
+- Se creó `requirements.txt` y se documentó el uso en el README.
+- Los datos de nombre, afiliación, amenaza, recompensa y debilidad se
+  identifican como simulados; el HUD no reconoce identidad real.
+
+### Traduccion en la nube y errores de Google Cloud
+
+**Prompts del usuario conservados**
+
+> el programa me dice que falta instalar las dependencias de google cloud
+
+> error 403 cloud vision api
+
+El historial resumido también menciona errores/capturas adicionales; no está
+disponible el texto exacto de todos ellos.
+
+**Respuesta y trabajo registrados**
+
+- Se integraron Vision y Translation de Google Cloud como una ruta de OCR y
+  traducción en segundo plano.
+- Se explicó la configuración de APIs, credenciales ADC y facturación.
+- El servicio devolvió errores de permisos/facturación; esas restricciones
+  debían resolverse desde la cuenta y configuración del proyecto cloud.
+- Ante los bloqueos de facturación se propuso migrar a herramientas locales.
+
+### Camara del telefono por Wi-Fi
+
+**Prompts del usuario**
+
+> Necesito inicializar con la camara de mi teléfono que tengo conectada al pc mediante wifi
+
+**Trabajo y respuesta registrados**
+
+- Se añadió `--camera INDEX_OR_URL` para elegir otro dispositivo local o una
+  URL de streaming compatible con OpenCV.
+- Se explicó que conectarse a la misma Wi-Fi no siempre expone una cámara como
+  webcam ni proporciona por sí solo una URL; hace falta una aplicación que
+  cree una cámara virtual o publique el flujo.
+
+### OCR y traduccion local con Tesseract y Argos
+
+**Prompts del usuario conservados**
+
+> Dice que faltan los clientes de google cloud
+
+> Se supone que ya está instlado
+
+> Tresseract necesita los datos de idioma eng y spa. Instala english y spanish
+> en treseract 0
+
+> "Language" object has no attribute "translations"
+
+> El traductor local funciona, sin embargo, se le dificulta traducir textos
+> sencillos, como el que escribí en papel "Hi, Im juan and y love technology,
+> la idea es que el texto sea enmarcado y traducido de la manera más correcta
+> posible, te adjunto imagen de la erronea traducción que ofrece:
+
+> El problema persiste, y peor que antes, probé con escritura a mano y fuente
+> en cursiva, sin embargo, el traductor soltaba traducciones sin sentido:
+
+**Trabajo y respuesta registrados**
+
+- Se cambió el OCR a Tesseract local y la traducción a Argos Translate
+  inglés-español.
+- Se corrigió la búsqueda de la traducción de Argos mediante
+  `Language.get_translation(...)`, y se configuró el chunker ligero
+  `MINISBD`.
+- Se documentó la instalación del ejecutable y de los modelos de idioma de
+  Tesseract, además de la descarga del modelo de traducción Argos.
+- Se ajustó la captura de imagen para OCR antes de espejar el video; se
+  mostraron el texto de origen y su traducción en un cuadro.
+- Se concluyó que la salida incorrecta provenía principalmente del OCR
+  manuscrito, no necesariamente del traductor. Las heurísticas y filtros
+  probados no resolvieron de forma fiable la cursiva.
+- Los mensajes que incluían imágenes no tienen las imágenes adjuntas a esta
+  bitácora.
+
+### Evaluacion de TrOCR y pausa de traduccion
+
+**Solicitud/respuesta conservada en resumen**
+
+El usuario eligió explorar un OCR especializado en escritura manuscrita y
+aceptó el mayor tamaño y lentitud potenciales. La selección estructurada no se
+conserva palabra por palabra.
+
+**Trabajo registrado**
+
+- Se investigó el modelo `microsoft/trocr-base-handwritten`, que reconoce
+  líneas de texto pero no localiza líneas en una página por sí mismo.
+- Se estimó una descarga aproximada de 1.3 GB y se señaló que el uso en CPU
+  podría ser lento. Los intentos de implementación no llegaron a producir una
+  integración aplicada y verificada con el modelo real.
+
+**Prompt del usuario**
+
+> No es viable, es muy lento, eliminemos todas las dependecias que se intalaron
+> para la traducción y dejemoslo para después
+
+**Respuesta y trabajo registrados**
+
+- Se retiraron del HUD la tecla `t`, la ejecución de OCR/traducción, los
+  overlays y el módulo local de traducción.
+- Se limpiaron `requirements.txt` y la documentación de la ruta de
+  traducción.
+- Se desinstalaron del `.venv` los paquetes exclusivos de OCR, traducción,
+  TrOCR/PyTorch y los clientes cloud de Google. Pillow se conservó porque
+  Matplotlib ya instalado dependía de él.
+- Con autorización del usuario se cerró el HUD que estaba usando archivos DLL
+  y se limpiaron restos temporales de desinstalación.
+- Se validaron imports del HUD, su CLI y `pip check`.
+
+### Escaneo con la mano, zoom y eliminación del filtro azul
+
+**Prompt del usuario**
+
+> Agrega un modo de escaneo que se active con la letra E, este modo detectará
+> la posición de los dedos de la mano para hacer zoom o alejarlo, la duración
+> para detectar que movimiento se quiere hacer va a ser de 2 segundos, si el
+> indice está alejado del pulgar se supondrá que se va a hacer zoom out al
+> unirlos, si el dedo indice y el pulgar están juntos, se supondrá que se hará
+> un zoom al alejarlos, y elimina el filtro azul
+
+**Respuesta y trabajo registrados**
+
+- Se añadió `hand_scanner.py` con MediaPipe Hand Landmarker y `zoom_control.py`
+  para interpretar el gesto de índice/pulgar.
+- `e` activa o desactiva el modo de escaneo. Separar y luego juntar los dedos
+  indica alejar; juntar y luego separar indica acercar.
+- El zoom digital se limita a 0.7×–3×.
+- Se retiró el tinte azul predeterminado; el modo de peligro rojo/naranja se
+  mantiene.
+- Las pruebas cubrieron sintaxis, imports, tiempos/direcciones simulados,
+  dimensiones del zoom y ausencia de tinte azul. No se hizo una prueba con
+  cámara real en esa sesión.
+
+### Cooldown y reconocimiento de un segundo
+
+**Prompt del usuario**
+
+> Bien, agregale por cada acción de alejar o zoom, haya un cooldown de 1.5
+> segundos para posicionar los dedos, ya que hay conflictos, al hacer zoom se
+> separan los dedos y el programa los detecta para alejar y no permite hacer
+> otro zoom o alejamiento comodamente
+
+**Respuesta y trabajo registrados**
+
+- Se añadió una pausa de 1.5 segundos luego de cada acción y un mensaje
+  “PAUSA // POSICIONA LOS DEDOS”.
+- Al terminar la pausa, la pose actual se usa como referencia, sin disparar el
+  gesto contrario durante el reposicionamiento.
+- Se probaron ambas direcciones y los límites temporales con entradas
+  simuladas.
+
+**Prompt del usuario**
+
+> Reduce el tiempo de reconocimiento a 1 segundo
+
+**Respuesta y trabajo registrados**
+
+- El tiempo de confirmación del gesto se redujo a 1 segundo.
+- El cooldown de 1.5 segundos se mantuvo sin cambios.
+- Se probaron ambas direcciones con el nuevo tiempo; compilación y `pip check`
+  finalizaron correctamente.
+
+### Solicitud de actualización de esta bitacora
+
+**Prompts del usuario**
+
+> Guarda los prompts que te hice junto con tus respuetsas en la carpeta "docs"
+
+> No, agrega todo lo que hicimos mucho más antes, incluido el codigo madre que
+> te di para empezar a crear el proyecto, elimina el archivo "architecture.md"
+> y agrega los prompts al archivo "BITACORA_PROMPTS.md"
+
+> no veo la actualización del archivo "BITACORA_PROMPTS"
+
+> VALE
+
+**Trabajo registrado**
+
+- El primer archivo de historial se creó en `kiroshi-optics/docs`, pero el
+  usuario indicó que el archivo esperado estaba en la raíz
+  `Proyecto-Kiroshi/BITACORA_PROMPTS.md`.
+- Esta actualización se aplica al archivo raíz, conservando sus nueve
+  entradas originales del 18 de octubre y añadiendo el prompt madre y el
+  historial ampliado.
+- `kiroshi-optics/docs/architecture.md` se eliminó a petición del usuario.

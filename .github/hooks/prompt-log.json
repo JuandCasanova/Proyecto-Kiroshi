@@ -1,0 +1,13 @@
+{
+  "version": 1,
+  "hooks": {
+    "UserPromptSubmit": [
+      {
+        "type": "command",
+        "windows": "powershell -NoProfile -ExecutionPolicy Bypass -File .github\\hooks\\append-prompt.ps1",
+        "cwd": ".",
+        "timeout": 10
+      }
+    ]
+  }
+}

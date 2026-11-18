@@ -91,9 +91,9 @@ El escaner de objetos usa YOLO11n-seg para segmentacion de instancias y puede
 marcar personas, botellas, tazas/pocillos, laptops, teclados, pantallas/TV,
 perros, gatos y peluches. «JUGUETE (PELUCHE)» corresponde a la clase `teddy
 bear` del modelo; no representa una categoria universal para cualquier
-juguete. El HUD dibuja el contorno de la mascara de cada instancia, no una caja
-rectangular. El modelo se descarga al activar el escaneo por primera vez y se
-guarda en `~/.cache/kiroshi-optics`.
+juguete. El objetivo detectado se marca con un cuadro amarillo pequeño en el
+centro, sin recubrirlo. `e` activa o desactiva el escaneo; el modelo se descarga
+al activar el escaneo por primera vez y se guarda en `~/.cache/kiroshi-optics`.
 Usa CUDA automaticamente si PyTorch detecta una GPU NVIDIA compatible; si no,
 usa CPU. El HUD muestra el dispositivo activo. Para CUDA se necesita una
 instalacion de PyTorch compatible con la version del controlador NVIDIA; si
@@ -109,25 +109,41 @@ el modo de escaneo esta apagado.
 En personas solo se marca la clase general «persona»; el HUD no infiere
 genero a partir de cabello, cuerpo o rostro.
 
+### Verificacion visual en la web
+
+Opcionalmente, Kiroshi puede contrastar el objetivo seleccionado con Gemini 4
+Carbon y Google Search. Configura `GEMINI_API_KEY` en el entorno de Windows
+antes de iniciar el HUD:
+
+```powershell
+$env:GEMINI_API_KEY = "TU_CLAVE_DE_GEMINI"
+.\.venv\Scripts\python.exe -m interfaces.hud
+```
+
+Al activar el escaneo con `e`, se envía una sola imagen recortada del objetivo
+seleccionado (no el video ni fotogramas continuos) para generar una respuesta
+con búsquedas y fuentes citadas. La consulta se ejecuta en segundo plano.
+Objetivos clasificados como personas no se envían. La solicitud usa
+almacenamiento desactivado (`store: false`); aun así, el procesamiento de la
+imagen está sujeto a las condiciones del proveedor. Sin `GEMINI_API_KEY`, la
+detección local funciona y el HUD muestra el error de configuración de la
+búsqueda web.
+
 La traduccion y el OCR se han pausado por ahora; no forman parte de esta
 version del HUD. Se podran reincorporar mas adelante con una solucion mas
-ligera y rapida. El HUD no requiere Tesseract, Argos Translate, Transformers
-ni servicios de Google Cloud. PyTorch se utiliza para el modelo de
-segmentacion.
+ligera y rapida. El HUD local no requiere Tesseract, Argos Translate ni
+Transformers. PyTorch se utiliza para el modelo de objetos.
 
-Pulsa `e` para activar o desactivar el modo de escaneo de objetos. El modelo
-de objetos solo procesa y dibuja detecciones mientras este modo esta activo.
-Dentro del escaneo, pulsa `z` para activar o desactivar el zoom manual por
-gestos; fuera del escaneo `z` no tiene efecto. MediaPipe detecta la punta del
-indice y del pulgar: mantenlos separados y luego juntalos durante un segundo
-para alejar el zoom; mantenlos juntos y separalos durante un segundo para
-acercarlo. El zoom digital va de 0.7x a 3.0x. Despues de cada accion hay una
-pausa de 1.5 segundos para recolocar los dedos; la posicion detectada al
-terminar la pausa se toma como nuevo punto de inicio. Al activar el zoom por
-primera vez se descarga el modelo de manos de MediaPipe y se guarda en
+Pulsa `e` para activar o desactivar el escaneo de objetos. Pulsa `z` en
+cualquier momento para activar o desactivar el zoom manual por gestos,
+independiente del escaneo. MediaPipe detecta la punta
+del indice y del pulgar. El zoom cambia de forma continua mientras mueves los
+dedos: juntarlos disminuye el zoom y separarlos lo aumenta. El zoom digital va
+de 0.7x a 3.0x sin confirmaciones temporales ni pausas entre movimientos. Al
+activar el zoom por primera vez se descarga el modelo de manos de MediaPipe y se guarda en
 `~/.cache/kiroshi-optics`; requiere conexion a Internet solo esa vez.
 
-El panel facial muestra la etiqueta «PERSONA», la afiliacion fija
-«UNIMINUTO» y una recompensa ficticia; no son inferencias ni identificaciones
-de las personas captadas por la camara. Pulsa `c` para cambiar el modo de
-color, `g` para activar o desactivar glitch/scanlines y `q` para salir.
+La deteccion facial se mantiene local y muestra el conteo y etiquetas anonimas
+en un panel lateral, sin dibujar cuadros sobre rostros ni identificar personas.
+Pulsa `c` para cambiar el modo de color, `g` para activar o desactivar
+glitch/scanlines y `q` para salir.

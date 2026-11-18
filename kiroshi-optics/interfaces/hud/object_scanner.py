@@ -1,11 +1,10 @@
-"""Segmentacion local de instancias con YOLO y aceleracion CUDA opcional."""
+"""Deteccion local de objetos con YOLO y aceleracion CUDA opcional."""
 
 from concurrent.futures import Future, ThreadPoolExecutor
 from dataclasses import dataclass
 from pathlib import Path
 import threading
 
-import cv2
 import numpy as np
 
 
@@ -34,7 +33,6 @@ class ObjectDetection:
     category: str
     score: float
     box: tuple[int, int, int, int]
-    contour: tuple[tuple[int, int], ...]
 
 
 class YoloSegmentationScanner:
@@ -91,34 +89,18 @@ class YoloSegmentationScanner:
             imgsz=640,
             device=self._device,
             max_det=MAX_RESULTS,
-            retina_masks=True,
             verbose=False,
         )[0]
-        if result.boxes is None or result.masks is None:
+        if result.boxes is None:
             return ()
 
         boxes = result.boxes.xyxy.detach().cpu().numpy()
         scores = result.boxes.conf.detach().cpu().numpy()
         class_ids = result.boxes.cls.detach().cpu().numpy().astype(int)
-        masks = result.masks.data.detach().cpu().numpy()
         detections = []
         for index, class_id in enumerate(class_ids):
             category = str(result.names[int(class_id)]).lower()
-            if category not in ALLOWED_CATEGORIES or index >= len(masks):
-                continue
-
-            mask = masks[index].astype(np.uint8)
-            if mask.shape != (height, width):
-                mask = cv2.resize(mask, (width, height), interpolation=cv2.INTER_NEAREST)
-            contours, _ = cv2.findContours(
-                mask,
-                cv2.RETR_EXTERNAL,
-                cv2.CHAIN_APPROX_SIMPLE,
-            )
-            if not contours:
-                continue
-            contour = max(contours, key=cv2.contourArea)
-            if len(contour) < 3:
+            if category not in ALLOWED_CATEGORIES:
                 continue
 
             x1, y1, x2, y2 = boxes[index]
@@ -131,10 +113,6 @@ class YoloSegmentationScanner:
                     category=category,
                     score=float(scores[index]),
                     box=(left, top, right - left, bottom - top),
-                    contour=tuple(
-                        (int(point[0][0]), int(point[0][1]))
-                        for point in contour
-                    ),
                 )
             )
         return tuple(detections)

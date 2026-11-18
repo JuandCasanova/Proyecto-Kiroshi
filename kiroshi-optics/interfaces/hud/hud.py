@@ -1,9 +1,8 @@
 """Composicion visual y ciclo principal del Kiroshi HUD."""
 
 from contextlib import ExitStack
-from dataclasses import dataclass
 from datetime import datetime
-import random
+import textwrap
 import time
 
 import cv2
@@ -12,6 +11,10 @@ import numpy as np
 from interfaces.hud.effects import CyberpunkEffects
 from interfaces.hud.face_scanner import MediaPipeFaceScanner
 from interfaces.hud.hand_scanner import HandScanResult, MediaPipeHandScanner
+from interfaces.hud.online_object_lookup import (
+    GeminiObjectLookup,
+    OnlineObjectResult,
+)
 from interfaces.hud.object_scanner import ObjectDetection, YoloSegmentationScanner
 from interfaces.hud.zoom_control import ZoomGestureController, ZoomGestureStatus
 
@@ -20,16 +23,7 @@ CYAN = (255, 230, 45)
 RED = (40, 55, 255)
 WHITE = (220, 245, 245)
 PANEL = (18, 28, 31)
-
-NPC_NAMES = ("PERSONA",)
-AFFILIATIONS = ("UNIMINUTO",)
-
-
-@dataclass(frozen=True)
-class FictionalProfile:
-    name: str
-    affiliation: str
-    bounty: int
+YELLOW = (0, 235, 255)
 
 
 class KiroshiHUD:
@@ -59,12 +53,16 @@ class KiroshiHUD:
         self._scan_mode = False
         self._object_scanner: YoloSegmentationScanner | None = None
         self._object_scan_error: str | None = None
+        self._online_lookup: GeminiObjectLookup | None = None
+        self._online_lookup_requested = False
+        self._online_lookup_pending = False
+        self._online_lookup_error: str | None = None
+        self._online_lookup_result: OnlineObjectResult | None = None
         self._zoom_enabled = False
         self._hand_scanner: MediaPipeHandScanner | None = None
         self._hand_scan_error: str | None = None
         self._zoom_controller = ZoomGestureController()
         self._zoom_status = ZoomGestureStatus(1.0, "MUESTRA LA MANO", 0.0)
-        self._profiles: list[FictionalProfile] = []
         self._started_at = time.monotonic()
         self._last_frame_at = self._started_at
         self._fps = 0.0
@@ -72,15 +70,6 @@ class KiroshiHUD:
     @property
     def _accent(self) -> tuple[int, int, int]:
         return RED if self._danger_mode else CYAN
-
-    def _profile_for(self, index: int) -> FictionalProfile:
-        while len(self._profiles) <= index:
-            self._profiles.append(FictionalProfile(
-                name=random.choice(NPC_NAMES),
-                affiliation=random.choice(AFFILIATIONS),
-                bounty=random.randrange(1_000, 75_001, 500),
-            ))
-        return self._profiles[index]
 
     def _draw_text(
         self,
@@ -120,27 +109,19 @@ class KiroshiHUD:
         cv2.line(frame, (center[0], center[1] - 28), (center[0], center[1] - 7), color, 1)
         cv2.line(frame, (center[0], center[1] + 7), (center[0], center[1] + 28), color, 1)
 
-    def _draw_face(self, frame: np.ndarray, box: tuple[int, int, int, int], index: int) -> None:
-        x, y, width, height = box
-        color = self._accent
-        corner = max(12, min(width, height) // 5)
-        right, bottom = x + width, y + height
-        for start, end in (
-            ((x, y), (x + corner, y)), ((x, y), (x, y + corner)),
-            ((right, y), (right - corner, y)), ((right, y), (right, y + corner)),
-            ((x, bottom), (x + corner, bottom)), ((x, bottom), (x, bottom - corner)),
-            ((right, bottom), (right - corner, bottom)),
-            ((right, bottom), (right, bottom - corner)),
-        ):
-            cv2.line(frame, start, end, color, 2, cv2.LINE_AA)
+    def _draw_face_sidebar(
+        self,
+        frame: np.ndarray,
+        face_count: int,
+    ) -> None:
+        if face_count == 0:
+            return
 
-        profile = self._profile_for(index)
-        panel_width, panel_height = 224, 85
-        panel_x = min(max(x, 6), max(6, frame.shape[1] - panel_width - 6))
-        panel_y = y - panel_height - 8
-        if panel_y < 36:
-            panel_y = min(bottom + 8, frame.shape[0] - panel_height - 34)
-        panel_y = max(30, panel_y)
+        panel_width = min(250, frame.shape[1] - 24)
+        panel_x = frame.shape[1] - panel_width - 12
+        panel_y = 76
+        panel_height = min(40 + min(face_count, 5) * 28, frame.shape[0] - panel_y - 20)
+        color = self._accent
         cv2.rectangle(
             frame, (panel_x, panel_y), (panel_x + panel_width, panel_y + panel_height),
             PANEL, -1,
@@ -149,10 +130,15 @@ class KiroshiHUD:
             frame, (panel_x, panel_y), (panel_x + panel_width, panel_y + panel_height),
             color, 1,
         )
-        self._draw_text(frame, "SIMULATED // NOT IDENTIFIED", (panel_x + 7, panel_y + 15), color, 0.34)
-        self._draw_text(frame, f"NAME: {profile.name}", (panel_x + 7, panel_y + 34), WHITE, 0.39)
-        self._draw_text(frame, f"AFFIL: {profile.affiliation}", (panel_x + 7, panel_y + 52), WHITE, 0.34)
-        self._draw_text(frame, f"BOUNTY: ${profile.bounty:,} EDDIES", (panel_x + 7, panel_y + 70), WHITE, 0.34)
+        self._draw_text(frame, f"ROSTROS DETECTADOS: {face_count}", (panel_x + 8, panel_y + 20), color, 0.38)
+        for index in range(min(face_count, 5)):
+            self._draw_text(
+                frame,
+                f"OBJETIVO {index + 1}: PERSONA // NO IDENTIFICADA",
+                (panel_x + 8, panel_y + 44 + index * 24),
+                WHITE,
+                0.31,
+            )
 
     def _draw_status(self, frame: np.ndarray, face_count: int, object_count: int) -> None:
         height, width = frame.shape[:2]
@@ -284,18 +270,142 @@ class KiroshiHUD:
             "dog": "PERRO",
             "teddy bear": "JUGUETE (PELUCHE)",
         }
-        for detection in detections:
-            x, y, width, height = detection.box
-            color = self._accent
-            contour = np.asarray(detection.contour, dtype=np.int32).reshape((-1, 1, 2))
-            cv2.polylines(frame, [contour], True, color, 2, cv2.LINE_AA)
-            text = f"{labels.get(detection.category, detection.category.upper())} {detection.score:.0%}"
-            text_y = max(18, y - 6)
-            self._draw_text(frame, text, (x, text_y), color, 0.38)
+        if not detections:
+            return
+
+        height, width = frame.shape[:2]
+        selected = self._select_target(detections, width, height)
+        x, y, box_width, box_height = selected.box
+        marker_size = max(18, min(48, int(min(box_width, box_height) * 0.3)))
+        center_x = x + box_width // 2
+        center_y = y + box_height // 2
+        half_marker = marker_size // 2
+        marker_x = max(0, min(width - marker_size, center_x - half_marker))
+        marker_y = max(0, min(height - marker_size, center_y - half_marker))
+        cv2.rectangle(
+            frame,
+            (marker_x, marker_y),
+            (marker_x + marker_size, marker_y + marker_size),
+            YELLOW,
+            2,
+            cv2.LINE_AA,
+        )
+        label = f"{labels.get(selected.category, selected.category.upper())} {selected.score:.0%}"
+        self._draw_text(frame, label, (marker_x, max(18, marker_y - 8)), YELLOW, 0.38)
 
         summary = YoloSegmentationScanner.computer_setup_summary(detections)
         if summary:
             self._draw_text(frame, summary, (30, 108), self._accent, 0.38)
+
+    @staticmethod
+    def _select_target(
+        detections: tuple[ObjectDetection, ...],
+        frame_width: int,
+        frame_height: int,
+    ) -> ObjectDetection:
+        frame_center = (frame_width / 2, frame_height / 2)
+        return min(
+            detections,
+            key=lambda item: (
+                abs(item.box[0] + item.box[2] / 2 - frame_center[0])
+                + abs(item.box[1] + item.box[3] / 2 - frame_center[1])
+            ),
+        )
+
+    def _draw_online_lookup(self, frame: np.ndarray) -> None:
+        if not (
+            self._online_lookup_pending
+            or self._online_lookup_error
+            or self._online_lookup_result
+        ):
+            return
+
+        panel_x, panel_y = 30, 100
+        panel_width = min(440, frame.shape[1] - 60)
+        lines = ["GEMINI // GOOGLE SEARCH"]
+        if self._online_lookup_pending:
+            lines.append("Verificando el objeto y buscando referencias...")
+        elif self._online_lookup_error:
+            lines.extend(textwrap.wrap(self._online_lookup_error, width=52)[:3])
+        elif self._online_lookup_result is not None:
+            lines.extend(textwrap.wrap(self._online_lookup_result.summary, width=52)[:4])
+            for query in self._online_lookup_result.queries[:2]:
+                lines.append(f"BUSQUEDA: {query[:42]}")
+            for citation in self._online_lookup_result.citations[:2]:
+                lines.append(citation.title[:52])
+                lines.append(citation.url[:52])
+
+        line_height = 18
+        panel_height = 12 + line_height * len(lines)
+        panel_height = min(panel_height, frame.shape[0] - panel_y - 12)
+        cv2.rectangle(
+            frame,
+            (panel_x, panel_y),
+            (panel_x + panel_width, panel_y + panel_height),
+            PANEL,
+            -1,
+        )
+        cv2.rectangle(
+            frame,
+            (panel_x, panel_y),
+            (panel_x + panel_width, panel_y + panel_height),
+            self._accent,
+            1,
+        )
+        for index, line in enumerate(lines):
+            self._draw_text(
+                frame,
+                line,
+                (panel_x + 8, panel_y + 18 + index * line_height),
+                self._accent if index == 0 else WHITE,
+                0.34,
+            )
+
+    def _request_online_lookup(
+        self,
+        frame: np.ndarray,
+        detections: tuple[ObjectDetection, ...],
+    ) -> None:
+        if not detections or self._online_lookup_requested:
+            return
+
+        selected = self._select_target(detections, frame.shape[1], frame.shape[0])
+        if selected.category == "person":
+            self._online_lookup_error = (
+                "La busqueda visual web se omite para objetivos clasificados como persona."
+            )
+            return
+        self._online_lookup_requested = True
+
+        try:
+            if self._online_lookup is None:
+                self._online_lookup = GeminiObjectLookup()
+                self._resources.callback(self._online_lookup.close)
+            self._online_lookup_pending = self._online_lookup.submit(frame, selected)
+            if not self._online_lookup_pending:
+                self._online_lookup_error = "Ya hay una consulta web pendiente."
+        except (RuntimeError, ValueError) as exc:
+            self._online_lookup_error = str(exc)
+
+    def _set_scan_mode(self, active: bool) -> None:
+        self._scan_mode = active
+        if active:
+            self._online_lookup_requested = False
+            self._online_lookup_pending = False
+            self._online_lookup_error = None
+            self._online_lookup_result = None
+            if self._object_scanner is None:
+                try:
+                    self._object_scanner = YoloSegmentationScanner()
+                    self._resources.callback(self._object_scanner.close)
+                except RuntimeError as exc:
+                    self._object_scan_error = str(exc)
+                    self._object_scanner = None
+                    self._scan_mode = False
+            else:
+                self._object_scan_error = None
+        else:
+            self._object_scan_error = None
 
     def run(self) -> None:
         """Ejecuta el visor hasta pulsar q; libera los recursos al salir."""
@@ -333,12 +443,24 @@ class KiroshiHUD:
                     except RuntimeError as exc:
                         self._object_scan_error = str(exc)
                     object_detections, self._object_scan_error = self._object_scanner.snapshot()
+                    self._request_online_lookup(frame, object_detections)
+                if self._online_lookup is not None:
+                    (
+                        self._online_lookup_pending,
+                        lookup_result,
+                        lookup_error,
+                    ) = self._online_lookup.snapshot()
+                    if lookup_result is not None:
+                        self._online_lookup_result = lookup_result
+                        self._online_lookup_error = None
+                    if lookup_error is not None:
+                        self._online_lookup_error = lookup_error
                 frame = self._effects.apply(frame, self._danger_mode, self._glitch_enabled)
                 boxes = self._scanner.detect(frame)
                 if self._scan_mode:
                     self._draw_objects(frame, object_detections)
-                for index, box in enumerate(boxes):
-                    self._draw_face(frame, box, index)
+                self._draw_face_sidebar(frame, len(boxes))
+                self._draw_online_lookup(frame)
                 self._draw_reticle(frame)
                 self._draw_frame_corners(frame)
                 self._draw_status(frame, len(boxes), len(object_detections))
@@ -347,25 +469,13 @@ class KiroshiHUD:
                 key = cv2.waitKey(1) & 0xFF
                 if key == ord("q"):
                     break
+                if key == ord("e"):
+                    self._set_scan_mode(not self._scan_mode)
                 if key == ord("c"):
                     self._danger_mode = not self._danger_mode
                 if key == ord("g"):
                     self._glitch_enabled = not self._glitch_enabled
-                if key == ord("e"):
-                    if self._scan_mode:
-                        self._scan_mode = False
-                        self._zoom_enabled = False
-                        self._hand_scan_error = None
-                    else:
-                        try:
-                            if self._object_scanner is None:
-                                self._object_scanner = YoloSegmentationScanner()
-                                self._resources.callback(self._object_scanner.close)
-                            self._object_scan_error = None
-                            self._scan_mode = True
-                        except RuntimeError as exc:
-                            self._object_scan_error = str(exc)
-                if key == ord("z") and self._scan_mode:
+                if key == ord("z"):
                     if self._zoom_enabled:
                         self._zoom_enabled = False
                         self._hand_scan_error = None

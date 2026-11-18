@@ -63,6 +63,7 @@ class YoloSegmentationScanner:
             raise RuntimeError(f"No se pudo cargar el modelo de segmentacion: {exc}") from exc
 
         self._lock = threading.Lock()
+        self._inference_lock = threading.Lock()
         self._executor = ThreadPoolExecutor(max_workers=1, thread_name_prefix="kiroshi-seg")
         self._future: Future[tuple[ObjectDetection, ...]] | None = None
         self._last_submitted_at = float("-inf")
@@ -83,14 +84,15 @@ class YoloSegmentationScanner:
 
     def _infer(self, frame_bgr: np.ndarray) -> tuple[ObjectDetection, ...]:
         height, width = frame_bgr.shape[:2]
-        result = self._model.predict(
-            source=frame_bgr,
-            conf=SCORE_THRESHOLD,
-            imgsz=640,
-            device=self._device,
-            max_det=MAX_RESULTS,
-            verbose=False,
-        )[0]
+        with self._inference_lock:
+            result = self._model.predict(
+                source=frame_bgr,
+                conf=SCORE_THRESHOLD,
+                imgsz=640,
+                device=self._device,
+                max_det=MAX_RESULTS,
+                verbose=False,
+            )[0]
         if result.boxes is None:
             return ()
 
@@ -116,6 +118,10 @@ class YoloSegmentationScanner:
                 )
             )
         return tuple(detections)
+
+    def detect(self, frame_bgr: np.ndarray) -> tuple[ObjectDetection, ...]:
+        """Ejecuta una inferencia sincronica para solicitudes de la interfaz web."""
+        return self._infer(frame_bgr)
 
     def snapshot(self) -> tuple[tuple[ObjectDetection, ...], str | None]:
         with self._lock:

@@ -8,8 +8,9 @@ sistema te dice exactamente que estas mirando.
 
 ## Estado actual
 El nucleo define la arquitectura y los contratos; los `run()` de agentes y
-skills siguen deliberadamente sin implementar. La interfaz local de webcam
-`interfaces/hud` ya ofrece una simulacion visual de las opticas Kiroshi.
+skills siguen deliberadamente sin implementar. El HUD de escritorio usa la
+camara local, MediaPipe y YOLO. El HUD web muestra la camara del navegador de
+forma local; el analisis web se habilitara al desplegar la API FastAPI.
 
 ## Estructura
 ```
@@ -22,7 +23,7 @@ kiroshi-optics/
 |                    llm_gateway, security, observability
 |-- tools/           vision_api_client
 |-- config/          agents.yaml, skills.yaml, taxonomy.yaml, environments/
-|-- interfaces/      api, cli, chat_ui, hud (webcam local)
+|-- interfaces/      api, cli, chat_ui, hud (escritorio y navegador)
 |-- evaluations/     agent_benchmarks, skill_tests
 `-- docs/            architecture.md, manifest_schema.md
 ```
@@ -45,6 +46,15 @@ Detalle completo en `docs/architecture.md`.
 ## Documentacion
 - `docs/architecture.md` — capas, pipeline, invariantes, como extender.
 - `docs/manifest_schema.md` — contrato obligatorio de agentes y skills.
+
+## HUD web
+
+La interfaz web esta en `interfaces/hud/web` y puede publicarse como sitio
+estatico; la pagina principal del repositorio redirige a ella. La vista de
+camara permanece en el navegador y no transmite fotogramas. El analisis web
+esta pendiente de conectar con la API en `interfaces/api/main.py`. GitHub Pages
+no puede ejecutar el detector. Para publicar la interfaz o habilitar el
+backend, sigue [`DEPLOY_WEB.md`](DEPLOY_WEB.md).
 
 ## HUD de webcam
 

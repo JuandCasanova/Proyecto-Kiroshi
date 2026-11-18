@@ -6,7 +6,7 @@ Kiroshi Optics busca llevar al mundo real algunas de las capacidades de las ópt
 
 La inspiración es conceptual: el proyecto no contempla fabricar implantes oculares. La experiencia se desarrollará como software y podrá evolucionar hacia distintos dispositivos con cámara.
 
-> **Estado actual:** el repositorio define la arquitectura, los agentes, las skills y sus contratos. Es todavía una base de desarrollo: las funciones de agentes y skills, el cliente de visión y las interfaces no están implementados. Por tanto, la captura de cámara, el análisis en vivo, la traducción y las superposiciones son objetivos, no capacidades disponibles hoy.
+> **Estado actual:** el núcleo de agentes y skills sigue siendo una base arquitectónica y sus funciones no están implementadas. Por separado, `kiroshi-optics/interfaces/hud` incluye un HUD de escritorio con cámara local, detección de objetos y conteo anónimo de rostros. `interfaces/hud/web` ofrece una vista de primera persona para navegador, con detección local de objetos (`E`) y zoom por gesto de pinza (`Z`); no envía fotogramas a un servidor. OCR, traducción e integración del HUD con el pipeline de agentes también siguen pendientes.
 
 ## Objetivos
 
@@ -26,16 +26,16 @@ La inspiración es conceptual: el proyecto no contempla fabricar implantes ocula
 - Pipeline de análisis de una región marcada (`Mark`) y taxonomía visual inicial.
 - Diseños de permisos, trazabilidad, memoria y validación.
 
-### Capacidades por implementar
+### Capacidades disponibles y pendientes
 
-1. **Captura de cámara:** obtener fotogramas del dispositivo y permitir seleccionar una región u objetivo.
-2. **Análisis visual:** integrar detección, segmentación y clasificación mediante un proveedor de visión.
+1. **HUD de escritorio:** usa la cámara conectada al equipo que ejecuta el programa.
+2. **HUD web:** cada visitante autoriza su propia cámara; el escaneo de objetos y el zoom por gesto se ejecutan localmente con MediaPipe. GitHub Pages sirve la interfaz estática, que descarga los modelos oficiales al activar cada función por primera vez.
 3. **Lectura de texto:** ejecutar OCR sobre texto seleccionado o visible en la escena.
 4. **Traducción:** traducir el texto reconocido y asociarlo con su posición en la imagen.
-5. **Interfaz visual:** presentar etiquetas, resultados y traducciones como superposiciones; optimizar el procesamiento para una experiencia fluida.
+5. **Integración con agentes:** conectar el HUD y las detecciones al pipeline declarativo de skills.
 6. **Pruebas y privacidad:** medir precisión y latencia, controlar el uso de datos visuales y validar permisos antes de incorporar nuevas fuentes de contexto.
 
-Las capacidades de cámara, OCR, traducción y HUD requerirán nuevos componentes o la implementación de los adaptadores existentes. No están incluidas entre las skills activas en la configuración actual.
+OCR, traducción y la integración del HUD con las skills activas siguen pendientes.
 
 ## Cómo funciona el análisis diseñado
 
@@ -64,13 +64,13 @@ Imagen o región marcada
 
 El `context_agent` puede ayudar a resolver empates entre candidatos; el contexto se mantiene separado de los atributos observados. Si falta evidencia que pueda comprobarse externamente, `reference_lookup` puede verificarla con fuentes autorizadas. Es la única skill diseñada con permiso de red.
 
-La captura futura de cámara entregará fotogramas o regiones a este pipeline. De igual manera, el OCR y la traducción deberán añadirse como capacidades explícitas; el flujo actual no los ejecuta.
+El HUD de escritorio y el HUD web detectan objetos de forma independiente; todavía no invocan este pipeline de agentes. El OCR y la traducción tampoco están implementados.
 
 ## Arquitectura
 
 | Capa | Responsabilidad |
 |---|---|
-| `interfaces/` | Puntos de entrada para API, CLI y futura interfaz visual/cámara. |
+| `interfaces/` | Puntos de entrada para API, CLI, HUD de escritorio y HUD web. |
 | `core/orchestrator/` | Enruta tareas, organiza su ejecución y coordina agentes. |
 | `agents/` | Componen skills para realizar un escaneo, elevar especificidad o desambiguar. |
 | `skills/` | Unidades con contratos definidos para normalizar, clasificar, extraer rasgos, refinar y validar. |
@@ -129,7 +129,7 @@ Proyecto-Kiroshi/
 │   │   └── skill_base/
 │   ├── docs/                   # arquitectura, manifiestos y contratos de prompts
 │   ├── evaluations/            # benchmarks y pruebas de skills
-│   ├── interfaces/             # API, CLI e interfaz visual por desarrollar
+│   ├── interfaces/             # API FastAPI, CLI, HUD de escritorio y web
 │   ├── skills/                 # skills de escaneo y desambiguación
 │   └── tools/                  # integraciones; cliente de visión pendiente
 └── mi-framework-ia/            # framework de ejemplo independiente
@@ -147,7 +147,7 @@ Proyecto-Kiroshi/
 
 ## Desarrollo
 
-El repositorio todavía no ofrece un comando para ejecutar una experiencia funcional de Kiroshi: los puntos de entrada y varias implementaciones son esqueletos. Para contribuir, se puede comenzar por implementar una skill según su manifiesto, conectar su integración en `tools/`, y añadir casos de evaluación en `kiroshi-optics/evaluations/`.
+Para ejecutar y desplegar el HUD web, consulta [la guía de despliegue](kiroshi-optics/DEPLOY_WEB.md). El núcleo de agentes, skills y varias integraciones continúan como esqueletos; para contribuir, implementa una skill según su manifiesto y añade casos de evaluación en `kiroshi-optics/evaluations/`.
 
 Documentación técnica:
 

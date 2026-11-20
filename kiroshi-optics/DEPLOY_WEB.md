@@ -68,11 +68,12 @@ dispositivo; no garantiza precision de nivel clinico o de producto.
   vista. Se omite la clase `person` para dar espacio a otras categorías; el
   objeto más cercano a la retícula muestra una descripción breve predefinida.
   El procesamiento se hace localmente en el navegador.
-- **Voz**: di **"detección de voz"** para habilitar comandos, **"modo escaneo"**
+- **Voz**: di **"detección de voz"** para habilitar comandos, **"escanear"**
   para iniciar el escaneo y **"zoom"** para activar el zoom gestual. Di
-  **"detener escaneo"**, **"detener zoom"** o **"desactivar detección de voz"**
-  para detenerlos. En espera solo se reconoce la frase de activación. El botón
-  de voz (o `V`) y los controles gráficos y de teclado siguen disponibles.
+  **"apagar escáner"** o **"Zoom Out"** para detener esas funciones, y
+  **"desactivar detección de voz"** para volver al modo de espera. En espera
+  solo se reconoce la frase de activación. El botón de voz (o `V`) y los
+  controles gráficos y de teclado siguen disponibles.
 - **Zoom gestual** o `Z`: activa/desactiva el zoom con pulgar e indice; separar
   los dedos acerca la imagen y juntarlos la aleja.
 - **Zoom**: tambien puede ajustarse manualmente; `Q` desconecta la camara.

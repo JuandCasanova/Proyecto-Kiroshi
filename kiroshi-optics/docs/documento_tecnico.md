@@ -79,7 +79,7 @@ identificación exacta de modelos de producto ni una precisión determinada.
 | Activar vista | Solicita permiso para usar la cámara. |
 | `E` | Alterna la detección local de objetos; excluye la clase `person`, dibuja cajas y etiquetas, y muestra una breve descripción del objeto más cercano a la retícula. |
 | `Z` | Alterna el seguimiento de la mano para controlar el zoom con pulgar e índice. |
-| Voz | En espera, **"detección de voz"** habilita el modo de comandos; **"modo escaneo"** inicia el escaneo y **"zoom"** activa el seguimiento gestual. **"Desactivar detección de voz"** vuelve al modo de espera. El botón de voz, la tecla `V` y los controles gráficos se conservan. |
+| Voz | En espera, **"detección de voz"** habilita el modo de comandos; **"escanear"** inicia el escaneo y **"zoom"** activa el seguimiento gestual. **"Apagar escáner"** y **"Zoom Out"** los desactivan; **"desactivar detección de voz"** vuelve al modo de espera. El botón de voz, la tecla `V` y los controles gráficos se conservan. |
 | Deslizador de zoom | Ajusta manualmente la ampliación entre 0.7× y 3.0×. |
 | `Q` | Desconecta la cámara. |
 

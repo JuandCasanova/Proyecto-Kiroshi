@@ -308,16 +308,16 @@ function processVoiceCommand(command) {
     return;
   }
 
-  if (command.includes("detener escaneo") || command.includes("desactivar escaneo")) {
+  if (command === "apagar escaner") {
     if (scanEnabled) void toggleObjectScan();
     return;
   }
-  if (command.includes("modo escaneo") || command.includes("modo de escaneo")) {
+  if (command === "escanear") {
     if (!scanEnabled) void toggleObjectScan();
     return;
   }
 
-  if (command.includes("detener zoom") || command.includes("desactivar zoom")) {
+  if (command.includes("zoom out") || command.includes("detener zoom") || command.includes("desactivar zoom")) {
     if (gestureEnabled) void toggleGestureZoom();
     return;
   }

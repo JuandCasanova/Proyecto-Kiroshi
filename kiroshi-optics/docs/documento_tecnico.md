@@ -64,7 +64,7 @@ identificación exacta de modelos de producto ni una precisión determinada.
 
 | Componente | Estado | Función y límites |
 |---|---|---|
-| HUD web | Operativo como sitio estático | `getUserMedia` muestra la cámara autorizada en el navegador. El botón **E** activa EfficientDet Lite0 mediante MediaPipe Tasks Vision, excluye `person` y permite hasta 20 resultados; **Z** activa el zoom por pinza. El objeto más cercano a la retícula muestra una descripción breve local. El video y la inferencia permanecen en el dispositivo. |
+| HUD web | Operativo como sitio estático | `getUserMedia` muestra la cámara autorizada en el navegador. El botón **E** activa EfficientDet Lite0 mediante MediaPipe Tasks Vision, excluye `person` y permite hasta 20 resultados; **Z** activa el zoom por pinza. El objeto más cercano a la retícula muestra una descripción breve local. El reconocimiento de voz usa la API nativa del navegador; en espera solo acepta la frase de activación. |
 | Modelos del HUD web | Descarga bajo demanda | El SDK MediaPipe Tasks Vision 0.10.14, EfficientDet Lite0 y el modelo Hand Landmarker se obtienen de CDN cuando se activa por primera vez la función correspondiente. Se requiere conexión para esa descarga. |
 | HUD de escritorio | Operativo como aplicación local | OpenCV captura video; MediaPipe detecta rostros sin identificarlos y manos; YOLO11n-seg detecta un conjunto limitado de objetos. Escaneo y zoom se controlan con teclado. |
 | Verificación web opcional del HUD de escritorio | Condicional | Si se configura `GEMINI_API_KEY`, puede enviarse una imagen recortada del objetivo seleccionado para búsqueda/verificación externa. No se envía un objetivo clasificado como persona. El uso depende de un proveedor externo. |
@@ -79,6 +79,7 @@ identificación exacta de modelos de producto ni una precisión determinada.
 | Activar vista | Solicita permiso para usar la cámara. |
 | `E` | Alterna la detección local de objetos; excluye la clase `person`, dibuja cajas y etiquetas, y muestra una breve descripción del objeto más cercano a la retícula. |
 | `Z` | Alterna el seguimiento de la mano para controlar el zoom con pulgar e índice. |
+| Voz | En espera, **"detección de voz"** habilita el modo de comandos; **"modo escaneo"** inicia el escaneo y **"zoom"** activa el seguimiento gestual. **"Desactivar detección de voz"** vuelve al modo de espera. El botón de voz, la tecla `V` y los controles gráficos se conservan. |
 | Deslizador de zoom | Ajusta manualmente la ampliación entre 0.7× y 3.0×. |
 | `C` | Alterna el color del HUD. |
 | `G` | Alterna el efecto visual de glitch. |
@@ -392,6 +393,10 @@ Para instrucciones del servicio Docker/API independiente, consulta
 - En el HUD web, los fotogramas se procesan en el dispositivo; el escaneo no
   transmite video al backend. La descarga de modelos sí contacta los CDN
   configurados.
+- El reconocimiento de voz web se inicia después de autorizar la cámara y puede
+  procesar audio mediante el servicio en línea del navegador. La aplicación no
+  envía audio a su propio backend. El reconocimiento continuo está sujeto al
+  soporte del navegador y a sus permisos.
 - Las descripciones son textos predefinidos asociados a las categorías
   detectadas; no son explicaciones generadas por Gemini ni una identificación
   detallada del ejemplar. La categoría `teddy bear` representa peluches, no

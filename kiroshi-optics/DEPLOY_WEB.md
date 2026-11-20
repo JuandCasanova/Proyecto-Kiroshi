@@ -10,9 +10,9 @@ segun la cache del navegador. Se necesita conexion a internet para esa descarga.
 
 La raiz del repositorio (`index.html`) redirige al HUD web. Configura GitHub
 Pages para publicar `main` desde `/(root)` y sube los cambios. Cada visitante
-autoriza su propia camara; `E` activa la deteccion local de objetos —sin la
-clase `person` y con hasta 20 resultados— y `Z` activa el zoom por gesto de
-pulgar e indice.
+autoriza su camara y el navegador inicia el reconocimiento de voz en espera.
+`E` activa la deteccion local de objetos —sin la clase `person` y con hasta
+20 resultados— y `Z` activa el zoom por gesto de pulgar e indice.
 
 ## Probar localmente
 
@@ -68,11 +68,19 @@ dispositivo; no garantiza precision de nivel clinico o de producto.
   vista. Se omite la clase `person` para dar espacio a otras categorías; el
   objeto más cercano a la retícula muestra una descripción breve predefinida.
   El procesamiento se hace localmente en el navegador.
+- **Voz**: di **"detección de voz"** para habilitar comandos, **"modo escaneo"**
+  para iniciar el escaneo y **"zoom"** para activar el zoom gestual. Di
+  **"detener escaneo"**, **"detener zoom"** o **"desactivar detección de voz"**
+  para detenerlos. En espera solo se reconoce la frase de activación. El botón
+  de voz (o `V`) y los controles gráficos y de teclado siguen disponibles.
 - **Zoom gestual** o `Z`: activa/desactiva el zoom con pulgar e indice; separar
   los dedos acerca la imagen y juntarlos la aleja.
 - **Cambiar color** o `C`: alterna cian y rojo.
 - **Glitch** o `G`: activa o desactiva el efecto visual.
 - **Zoom**: tambien puede ajustarse manualmente; `Q` desconecta la camara.
 
-El escaneo facial solo cuenta rostros y no identifica personas. La consulta
-opcional a Gemini del HUD de escritorio no se ejecuta en esta version web.
+El escaneo facial solo cuenta rostros y no identifica personas. El
+reconocimiento nativo de voz requiere permiso de microfono, suele depender de
+Chrome o Edge y puede procesar audio mediante un servicio en linea del
+navegador; el audio no se envia a la API de este proyecto. La consulta opcional
+a Gemini del HUD de escritorio no se ejecuta en esta version web.

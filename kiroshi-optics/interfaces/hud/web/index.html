@@ -17,12 +17,13 @@
         <p class="brand">KIROSHI OPTICS</p>
         <span>Vista en primera persona</span>
         <button class="activate-button" id="activate-camera" type="button">ACTIVAR VISTA</button>
-        <small>El navegador solicitara permiso para usar la camara.</small>
+        <small>Se solicitaran permisos de camara y microfono. La voz escucha "deteccion de voz" y puede procesar audio en linea.</small>
       </div>
 
       <div class="hud-overlay" id="hud-overlay" aria-hidden="true">
         <div class="status status-top-left"><i></i><span id="camera-state">CAMARA EN ESPERA</span></div>
         <span class="time-readout" id="clock">--:--:--</span>
+        <span class="voice-readout" id="voice-readout" hidden>VOZ: EN ESPERA</span>
         <div class="reticle" aria-hidden="true"><i></i></div>
         <div class="corner-marks"><i></i><i></i><i></i><i></i></div>
         <span class="mode-readout">MODO VISUAL</span>
@@ -36,6 +37,7 @@
       <section class="settings-panel" id="settings-panel" aria-label="Controles del HUD" hidden>
         <p class="panel-heading">CONTROLES DE OPTICA</p>
         <button class="panel-button" id="camera-button" type="button">ACTIVAR CAMARA</button>
+        <button class="panel-button" id="voice-button" type="button" disabled aria-pressed="false">DETECCION DE VOZ: OFF</button>
         <button class="panel-button" id="scan-button" type="button" disabled aria-pressed="false">ESCANEO DE OBJETOS: OFF</button>
         <button class="panel-button" id="gesture-button" type="button" disabled aria-pressed="false">ZOOM GESTUAL: OFF</button>
         <button class="panel-button" id="color-button" type="button" disabled>CAMBIAR COLOR</button>
@@ -46,7 +48,8 @@
           <input id="zoom" type="range" min="0.7" max="3" step="0.01" value="1" disabled>
           <output id="zoom-value">1.0x</output>
         </label>
-        <p class="privacy-note">E: escanear objetos · Z: zoom con pinza. El video se procesa en este dispositivo; la primera vez se descargan los modelos.</p>
+        <p class="privacy-note">Di "deteccion de voz" para habilitar comandos; "modo escaneo" y "zoom" los activan. En espera solo se reconoce la frase de activacion. El servicio de voz del navegador puede procesar audio en linea; el video se procesa en este dispositivo.</p>
+        <p class="privacy-note">E: escanear · Z: zoom con pinza. Los modelos visuales se descargan la primera vez.</p>
       </section>
 
       <div class="error-panel" id="error-panel" role="alert" hidden></div>

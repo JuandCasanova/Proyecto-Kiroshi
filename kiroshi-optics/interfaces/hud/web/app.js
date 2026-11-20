@@ -64,6 +64,7 @@ const detectionsCanvas = document.querySelector("#detections");
 const placeholder = document.querySelector("#camera-placeholder");
 const activateButton = document.querySelector("#activate-camera");
 const cameraButton = document.querySelector("#camera-button");
+const voiceButton = document.querySelector("#voice-button");
 const scanButton = document.querySelector("#scan-button");
 const gestureButton = document.querySelector("#gesture-button");
 const settingsToggle = document.querySelector("#settings-toggle");
@@ -74,6 +75,7 @@ const fullscreenButton = document.querySelector("#fullscreen-button");
 const zoomInput = document.querySelector("#zoom");
 const zoomValue = document.querySelector("#zoom-value");
 const cameraState = document.querySelector("#camera-state");
+const voiceReadout = document.querySelector("#voice-readout");
 const scanReadout = document.querySelector("#scan-readout");
 const gestureReadout = document.querySelector("#gesture-readout");
 const objectDescription = document.querySelector("#object-description");
@@ -81,8 +83,15 @@ const errorPanel = document.querySelector("#error-panel");
 const clock = document.querySelector("#clock");
 
 let mediaStream = null;
+let speechRecognition = null;
 let scanEnabled = false;
 let gestureEnabled = false;
+let voiceModeEnabled = false;
+let voiceRecognitionSupported = false;
+let voicePermissionBlocked = false;
+let voiceListening = false;
+let voiceRestartTimer = null;
+let voiceRestartDelay = 500;
 let visionModulePromise = null;
 let visionFilesetPromise = null;
 let objectDetectorPromise = null;
@@ -137,7 +146,201 @@ function updateFeatureControls() {
   colorButton.disabled = !cameraActive;
   glitchButton.disabled = !cameraActive;
   zoomInput.disabled = !cameraActive;
+  updateVoiceReadout();
   updateFeatureReadouts();
+}
+
+function updateVoiceReadout() {
+  voiceReadout.hidden = !mediaStream;
+  voiceReadout.classList.toggle("active", voiceModeEnabled);
+  voiceButton.disabled = !mediaStream || !voiceRecognitionSupported || voicePermissionBlocked;
+  voiceButton.setAttribute("aria-pressed", String(voiceModeEnabled));
+
+  if (!mediaStream) {
+    voiceReadout.textContent = "VOZ: INACTIVA";
+    voiceButton.textContent = "COMANDOS DE VOZ: OFF";
+  } else if (!voiceRecognitionSupported) {
+    voiceReadout.textContent = "VOZ: NO DISPONIBLE";
+    voiceButton.textContent = "VOZ: NO DISPONIBLE";
+  } else if (voicePermissionBlocked) {
+    voiceReadout.textContent = "VOZ: REVISA EL PERMISO";
+    voiceButton.textContent = "VOZ: BLOQUEADA";
+  } else if (voiceModeEnabled) {
+    voiceReadout.textContent = "VOZ: COMANDOS ACTIVOS";
+    voiceButton.textContent = "COMANDOS DE VOZ: ON";
+  } else {
+    voiceReadout.textContent = voiceListening ? "VOZ: EN ESPERA" : "VOZ: CONECTANDO";
+    voiceButton.textContent = "COMANDOS DE VOZ: OFF";
+  }
+}
+
+function scheduleVoiceRestart() {
+  if (!mediaStream || !speechRecognition || voicePermissionBlocked || voiceRestartTimer) return;
+  const delay = voiceRestartDelay;
+  voiceRestartDelay = Math.min(voiceRestartDelay * 2, 4000);
+  voiceRestartTimer = window.setTimeout(() => {
+    voiceRestartTimer = null;
+    startVoiceRecognition();
+  }, delay);
+}
+
+function startVoiceRecognition() {
+  if (!mediaStream || !speechRecognition || voiceListening || voicePermissionBlocked) return;
+  try {
+    speechRecognition.start();
+    voiceListening = true;
+    updateVoiceReadout();
+  } catch (error) {
+    if (error?.name === "InvalidStateError") return;
+    console.error("No se pudo iniciar el reconocimiento de voz.", error);
+    voicePermissionBlocked = true;
+    voiceModeEnabled = false;
+    updateVoiceReadout();
+    showError("No se pudo iniciar la voz. Revisa el permiso del microfono y la conexion.");
+  }
+}
+
+function initializeVoiceRecognition() {
+  const Recognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!Recognition) {
+    voiceRecognitionSupported = false;
+    updateVoiceReadout();
+    return;
+  }
+
+  try {
+    speechRecognition = new Recognition();
+  } catch (error) {
+    console.error("No se pudo crear el reconocedor de voz.", error);
+    voiceRecognitionSupported = false;
+    updateVoiceReadout();
+    showError("El navegador no pudo iniciar el reconocimiento de voz.");
+    return;
+  }
+  speechRecognition.lang = "es-CO";
+  speechRecognition.continuous = true;
+  speechRecognition.interimResults = false;
+  speechRecognition.maxAlternatives = 1;
+  speechRecognition.onstart = () => {
+    voiceListening = true;
+    voiceRestartDelay = 500;
+    updateVoiceReadout();
+  };
+  speechRecognition.onresult = handleVoiceResult;
+  speechRecognition.onerror = (event) => {
+    voiceListening = false;
+    if (event.error === "not-allowed" || event.error === "service-not-allowed") {
+      voicePermissionBlocked = true;
+      voiceModeEnabled = false;
+      showError("Permite el microfono y el reconocimiento de voz en el navegador.");
+    }
+    updateVoiceReadout();
+  };
+  speechRecognition.onend = () => {
+    voiceListening = false;
+    updateVoiceReadout();
+    scheduleVoiceRestart();
+  };
+  voiceRecognitionSupported = true;
+  updateVoiceReadout();
+  startVoiceRecognition();
+}
+
+function stopVoiceRecognition() {
+  if (voiceRestartTimer) {
+    window.clearTimeout(voiceRestartTimer);
+    voiceRestartTimer = null;
+  }
+
+  const recognition = speechRecognition;
+  speechRecognition = null;
+  voiceModeEnabled = false;
+  voiceRecognitionSupported = false;
+  voicePermissionBlocked = false;
+  voiceListening = false;
+  if (recognition) {
+    recognition.onstart = null;
+    recognition.onresult = null;
+    recognition.onerror = null;
+    recognition.onend = null;
+    try {
+      recognition.stop();
+    } catch (error) {
+      if (error?.name !== "InvalidStateError") {
+        console.error("No se pudo detener el reconocimiento de voz.", error);
+      }
+    }
+  }
+  updateVoiceReadout();
+}
+
+function normalizeVoiceCommand(transcript) {
+  return transcript
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9 ]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function handleVoiceResult(event) {
+  for (let index = event.resultIndex; index < event.results.length; index += 1) {
+    const result = event.results[index];
+    if (!result.isFinal || !result[0]?.transcript) continue;
+    processVoiceCommand(normalizeVoiceCommand(result[0].transcript));
+  }
+}
+
+function processVoiceCommand(command) {
+  const disableVoice = command.includes("desactivar deteccion de voz") ||
+    command.includes("desactiva deteccion de voz") ||
+    command.includes("detener deteccion de voz");
+
+  if (!voiceModeEnabled) {
+    if (!disableVoice && command.includes("deteccion de voz")) {
+      voiceModeEnabled = true;
+      clearError();
+      updateVoiceReadout();
+    }
+    return;
+  }
+
+  if (disableVoice) {
+    voiceModeEnabled = false;
+    updateVoiceReadout();
+    return;
+  }
+
+  if (command.includes("detener escaneo") || command.includes("desactivar escaneo")) {
+    if (scanEnabled) void toggleObjectScan();
+    return;
+  }
+  if (command.includes("modo escaneo") || command.includes("modo de escaneo")) {
+    if (!scanEnabled) void toggleObjectScan();
+    return;
+  }
+
+  if (command.includes("detener zoom") || command.includes("desactivar zoom")) {
+    if (gestureEnabled) void toggleGestureZoom();
+    return;
+  }
+  if (command === "zoom" || command.includes("activar zoom") || command.includes("modo zoom")) {
+    if (!gestureEnabled) void toggleGestureZoom();
+  }
+}
+
+function toggleVoiceMode() {
+  if (!mediaStream) {
+    showError("Activa la camara para habilitar los comandos de voz.");
+    return;
+  }
+  if (!voiceRecognitionSupported || voicePermissionBlocked) {
+    showError("El reconocimiento de voz no esta disponible o no tiene permiso.");
+    return;
+  }
+  voiceModeEnabled = !voiceModeEnabled;
+  updateVoiceReadout();
 }
 
 async function loadVisionModule() {
@@ -227,11 +430,13 @@ async function connectCamera() {
     cameraState.parentElement.classList.add("active");
     cameraButton.textContent = "DESCONECTAR CAMARA";
     activateButton.hidden = true;
-    updateFeatureControls();
     mediaStream.getVideoTracks()[0].addEventListener("ended", disconnectCamera, { once: true });
+    initializeVoiceRecognition();
+    updateFeatureControls();
   } catch (error) {
     if (mediaStream) mediaStream.getTracks().forEach((track) => track.stop());
     mediaStream = null;
+    stopVoiceRecognition();
     const messages = {
       NotAllowedError: "Permiso denegado. Permite la camara en la configuracion del navegador.",
       NotFoundError: "No se encontro una camara trasera disponible; revisa la configuracion del dispositivo.",
@@ -253,6 +458,7 @@ function disconnectCamera() {
     mediaStream.getTracks().forEach((track) => track.stop());
     mediaStream = null;
   }
+  stopVoiceRecognition();
   scanEnabled = false;
   gestureEnabled = false;
   latestDetections = [];
@@ -477,6 +683,7 @@ function processVideoFrame(now) {
 
 activateButton.addEventListener("click", connectCamera);
 cameraButton.addEventListener("click", () => mediaStream ? disconnectCamera() : connectCamera());
+voiceButton.addEventListener("click", toggleVoiceMode);
 scanButton.addEventListener("click", toggleObjectScan);
 gestureButton.addEventListener("click", toggleGestureZoom);
 settingsToggle.addEventListener("click", toggleSettings);
@@ -496,6 +703,7 @@ document.addEventListener("keydown", (event) => {
     const enabled = optics.classList.toggle("glitch");
     glitchButton.textContent = `GLITCH: ${enabled ? "ON" : "OFF"}`;
   }
+  if (key === "v" && mediaStream) toggleVoiceMode();
   if (key === "e") void toggleObjectScan();
   if (key === "z") void toggleGestureZoom();
   if (key === "q" && mediaStream) disconnectCamera();
@@ -518,6 +726,7 @@ window.requestAnimationFrame(processVideoFrame);
 window.addEventListener("resize", drawDetections);
 window.addEventListener("beforeunload", () => {
   window.clearInterval(clockTimer);
+  stopVoiceRecognition();
   if (mediaStream) mediaStream.getTracks().forEach((track) => track.stop());
   if (objectDetector) objectDetector.close();
   if (handLandmarker) handLandmarker.close();

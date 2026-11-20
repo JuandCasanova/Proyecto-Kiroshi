@@ -54,9 +54,11 @@ Detalle de componentes, alcance y diagramas en
 
 La interfaz web esta en `interfaces/hud/web` y puede publicarse como sitio
 estatico; la pagina principal del repositorio redirige a ella. La deteccion de
-objetos con la tecla `E` y el zoom por gesto con `Z` se ejecutan localmente con
-MediaPipe; no transmiten fotogramas a la API. GitHub Pages entrega la interfaz
-y los modelos se descargan desde CDN al activarlos por primera vez. Para
+objetos con `E` y el zoom por gesto con `Z` se ejecutan localmente con MediaPipe;
+la voz puede activar estas funciones tras decir «deteccion de voz». No se
+transmiten fotogramas a la API. El reconocimiento nativo de voz puede procesar
+audio mediante el servicio del navegador. GitHub Pages entrega la interfaz y
+los modelos visuales se descargan desde CDN al activarlos por primera vez. Para
 publicar la interfaz o desplegar la API independiente, sigue
 [`DEPLOY_WEB.md`](DEPLOY_WEB.md).
 

@@ -151,6 +151,6 @@ Para ejecutar y desplegar el HUD web, consulta [la guía de despliegue](kiroshi-
 
 Documentación técnica:
 
-- [Arquitectura](kiroshi-optics/docs/architecture.md)
+- [Documento técnico: sistema, objetivos y diagramas UML](kiroshi-optics/docs/documento_tecnico.md)
 - [Esquema de manifiestos](kiroshi-optics/docs/manifest_schema.md)
 - [Contratos de prompts](kiroshi-optics/docs/prompt_contracts.md)

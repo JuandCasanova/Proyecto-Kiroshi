@@ -38,31 +38,22 @@ docker build -f kiroshi-optics/Dockerfile -t kiroshi-hud .
 docker run --rm -p 8000:8000 kiroshi-hud
 ```
 
-## Publicar en Render con CPU
+## API FastAPI en un servicio Docker (opcional)
 
-1. Sube los cambios a GitHub.
-2. En Render, elige **New > Web Service** y conecta `JuandCasanova/Proyecto-Kiroshi`.
-3. Deja **Root Directory** vacio para que el contexto sea la raiz del repositorio.
-4. Selecciona **Docker** y configura **Dockerfile Path** como
-   `kiroshi-optics/Dockerfile`.
-5. Elige un plan CPU con memoria suficiente para PyTorch y YOLO. El plan mas
-   pequeno (512 MB) probablemente no alcance para cargar los modelos; en CPU la
-   inferencia tambien sera mas lenta que en una GPU. Puedes intentar el plan
-   Free, pero no se garantiza que el escaneo sobreviva a la carga del modelo.
-6. Despues de crear el servicio, abre **Settings > Health Checks** y configura
-   `/api/health` como health check path.
-7. Crea el servicio. Cuando el deploy termine, Render mostrara una URL HTTPS
-   `onrender.com`; esa sera la URL publica del HUD real.
+El HUD web publicado en GitHub Pages no necesita un backend. Si se requiere
+desplegar la API incluida por separado, utiliza cualquier plataforma que acepte
+contenedores Docker:
 
-## Publicar en otro servicio Docker
+1. Usa la raiz del repositorio como contexto de construccion y
+   `kiroshi-optics/Dockerfile` como Dockerfile.
+2. Expone el puerto `8000`.
+3. Configura `/api/health` como ruta de comprobacion de salud, si la plataforma
+   ofrece esa opcion.
+4. Cuando el servicio esté disponible, verifica que `GET /api/health` responda
+   `{"status":"ok"}`.
 
-1. Crea un servicio web desde el repositorio y selecciona Docker.
-2. Usa la raiz del repositorio como contexto y `kiroshi-optics/Dockerfile` como
-   archivo de construccion.
-4. Configura el health check como `/api/health`.
-5. Espera a que termine el despliegue y abre la URL HTTPS que proporciona el servicio.
-6. Prueba `/api/health`; debe responder `{"status":"ok"}`. Luego abre la raiz del
-   mismo dominio para cargar el HUD.
+Esta API es independiente: el frontend actual no le envía fotogramas ni usa sus
+resultados. Desplegarla no cambia el funcionamiento del HUD de GitHub Pages.
 
 La API FastAPI incluida es una opcion independiente para despliegues futuros;
 la interfaz web actual no depende de ella. El escaneo del navegador usa el
@@ -73,7 +64,8 @@ dispositivo; no garantiza precision de nivel clinico o de producto.
 
 - **Activar camara**: solicita permiso para la camara local del navegador.
 - **Escaneo de objetos** o `E`: activa/desactiva detecciones dibujadas sobre la
-  vista. El procesamiento se hace localmente en el navegador.
+  vista. El objeto más cercano a la retícula también muestra una descripción
+  breve predefinida; el procesamiento se hace localmente en el navegador.
 - **Zoom gestual** o `Z`: activa/desactiva el zoom con pulgar e indice; separar
   los dedos acerca la imagen y juntarlos la aleja.
 - **Cambiar color** o `C`: alterna cian y rojo.

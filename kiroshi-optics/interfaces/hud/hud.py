@@ -15,6 +15,7 @@ from interfaces.hud.online_object_lookup import (
     GeminiObjectLookup,
     OnlineObjectResult,
 )
+from interfaces.hud.object_descriptions import OBJECT_LABELS, describe_object
 from interfaces.hud.object_scanner import ObjectDetection, YoloSegmentationScanner
 from interfaces.hud.zoom_control import ZoomGestureController, ZoomGestureStatus
 
@@ -259,17 +260,6 @@ class KiroshiHUD:
         frame: np.ndarray,
         detections: tuple[ObjectDetection, ...],
     ) -> None:
-        labels = {
-            "person": "PERSONA",
-            "bottle": "BOTELLA",
-            "cup": "TAZA/POCILLO",
-            "laptop": "LAPTOP",
-            "keyboard": "TECLADO",
-            "tv": "PANTALLA/TV",
-            "cat": "GATO",
-            "dog": "PERRO",
-            "teddy bear": "JUGUETE (PELUCHE)",
-        }
         if not detections:
             return
 
@@ -290,8 +280,16 @@ class KiroshiHUD:
             2,
             cv2.LINE_AA,
         )
-        label = f"{labels.get(selected.category, selected.category.upper())} {selected.score:.0%}"
+        category_label = OBJECT_LABELS.get(selected.category, selected.category.upper())
+        label = f"{category_label} {selected.score:.0%}"
         self._draw_text(frame, label, (marker_x, max(18, marker_y - 8)), YELLOW, 0.38)
+        self._draw_text(
+            frame,
+            f"{category_label}: {describe_object(selected.category)}",
+            (30, max(18, height - 58)),
+            WHITE,
+            0.34,
+        )
 
         summary = YoloSegmentationScanner.computer_setup_summary(detections)
         if summary:

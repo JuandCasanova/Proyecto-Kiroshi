@@ -7,6 +7,56 @@ const MIN_GAP_RATIO = 0.12;
 const MAX_GAP_RATIO = 0.68;
 const MIN_ZOOM = 0.7;
 const MAX_ZOOM = 3;
+const OBJECT_LABELS = {
+  person: "PERSONA",
+  bottle: "BOTELLA",
+  cup: "TAZA",
+  laptop: "LAPTOP",
+  mouse: "MOUSE",
+  keyboard: "TECLADO",
+  chair: "SILLA",
+  "teddy bear": "JUGUETE/PELUCHE",
+  tv: "PANTALLA",
+  "cell phone": "TELEFONO",
+  book: "LIBRO",
+  remote: "CONTROL REMOTO",
+  couch: "SOFA",
+  "dining table": "MESA",
+  backpack: "MOCHILA",
+  handbag: "BOLSO",
+  suitcase: "MALETA",
+  clock: "RELOJ",
+  "sports ball": "PELOTA",
+  bicycle: "BICICLETA",
+  car: "AUTO",
+  dog: "PERRO",
+  cat: "GATO"
+};
+const OBJECT_DESCRIPTIONS = {
+  person: "Persona detectada; no se intenta identificarla.",
+  bottle: "Recipiente para almacenar y transportar líquidos.",
+  cup: "Recipiente pequeño para beber.",
+  laptop: "Computadora portátil para trabajar y ejecutar programas.",
+  mouse: "Periférico para mover el cursor y seleccionar.",
+  keyboard: "Teclado para escribir e ingresar comandos.",
+  chair: "Asiento con respaldo para una persona.",
+  "teddy bear": "Juguete de peluche para jugar o acompañar.",
+  tv: "Pantalla para ver contenido audiovisual.",
+  "cell phone": "Teléfono portátil para comunicarse y usar aplicaciones.",
+  book: "Publicación impresa para leer o consultar.",
+  remote: "Control para manejar aparatos a distancia.",
+  couch: "Asiento amplio para varias personas.",
+  "dining table": "Superficie para comer o apoyar objetos.",
+  backpack: "Bolso que se lleva en la espalda.",
+  handbag: "Bolso para transportar objetos personales.",
+  suitcase: "Maleta para llevar pertenencias durante un viaje.",
+  clock: "Dispositivo que indica la hora.",
+  "sports ball": "Balón o pelota usado en actividades deportivas.",
+  bicycle: "Vehículo de dos ruedas impulsado con pedales.",
+  car: "Vehículo motorizado para transportar personas.",
+  dog: "Animal doméstico; la detección solo indica la categoría.",
+  cat: "Animal doméstico; la detección solo indica la categoría."
+};
 
 const optics = document.querySelector("#hud");
 const video = document.querySelector("#camera");
@@ -26,6 +76,7 @@ const zoomValue = document.querySelector("#zoom-value");
 const cameraState = document.querySelector("#camera-state");
 const scanReadout = document.querySelector("#scan-readout");
 const gestureReadout = document.querySelector("#gesture-readout");
+const objectDescription = document.querySelector("#object-description");
 const errorPanel = document.querySelector("#error-panel");
 const clock = document.querySelector("#clock");
 
@@ -192,6 +243,8 @@ async function connectCamera() {
 function clearDetectionOverlay() {
   const context = detectionsCanvas.getContext("2d");
   context.clearRect(0, 0, detectionsCanvas.width, detectionsCanvas.height);
+  objectDescription.hidden = true;
+  objectDescription.textContent = "";
 }
 
 function disconnectCamera() {
@@ -306,6 +359,10 @@ function drawDetections() {
   const scale = Math.max(bounds.width / video.videoWidth, bounds.height / video.videoHeight);
   const offsetX = (bounds.width - video.videoWidth * scale) / 2;
   const offsetY = (bounds.height - video.videoHeight * scale) / 2;
+  const frameCenterX = video.videoWidth / 2;
+  const frameCenterY = video.videoHeight / 2;
+  let selectedObject = null;
+  let nearestDistance = Infinity;
   context.lineWidth = 2;
   context.font = "12px Consolas, monospace";
   context.textBaseline = "bottom";
@@ -322,6 +379,14 @@ function drawDetections() {
     const height = box.height * scale * currentZoom;
     const label = `${category.categoryName.toUpperCase()} ${Math.round(category.score * 100)}%`;
     const labelWidth = context.measureText(label).width + 12;
+    const distance = Math.hypot(
+      box.originX + box.width / 2 - frameCenterX,
+      box.originY + box.height / 2 - frameCenterY
+    );
+    if (distance < nearestDistance) {
+      nearestDistance = distance;
+      selectedObject = category.categoryName.toLowerCase();
+    }
 
     context.strokeStyle = "#56ffe0";
     context.fillStyle = "rgba(3, 10, 10, 0.78)";
@@ -330,6 +395,17 @@ function drawDetections() {
     context.fillStyle = "#b7ffe9";
     context.fillText(label, x + 6, Math.max(0, y - 6));
   });
+
+  if (selectedObject) {
+    const label = OBJECT_LABELS[selectedObject] || selectedObject.toUpperCase();
+    const description = OBJECT_DESCRIPTIONS[selectedObject] ||
+      "Objeto detectado localmente; descripción general no disponible.";
+    objectDescription.textContent = `${label} · ${description}`;
+    objectDescription.hidden = false;
+  } else {
+    objectDescription.hidden = true;
+    objectDescription.textContent = "";
+  }
 }
 
 function updateGestureZoom(result) {

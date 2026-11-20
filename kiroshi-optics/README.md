@@ -102,11 +102,12 @@ inicio descarga el modelo oficial de MediaPipe y lo guarda en
 `~/.cache/kiroshi-optics`.
 
 El escaner de objetos usa YOLO11n-seg para segmentacion de instancias y puede
-marcar personas, botellas, tazas/pocillos, laptops, teclados, pantallas/TV,
-perros, gatos y peluches. «JUGUETE (PELUCHE)» corresponde a la clase `teddy
-bear` del modelo; no representa una categoria universal para cualquier
-juguete. El objetivo detectado se marca con un cuadro amarillo pequeño en el
-centro, sin recubrirlo. `e` activa o desactiva el escaneo; el modelo se descarga
+marcar personas, botellas, tazas/pocillos, laptops, mouse, teclados, sillas,
+pantallas/TV, perros, gatos y peluches. «JUGUETE/PELUCHE» corresponde a la clase
+`teddy bear` del modelo; no representa una categoria universal para cualquier
+juguete. El HUD muestra una descripcion local y breve del objeto mas cercano a
+la reticula. El objetivo detectado se marca con un cuadro amarillo pequeño en
+el centro, sin recubrirlo. `e` activa o desactiva el escaneo; el modelo se descarga
 al activar el escaneo por primera vez y se guarda en `~/.cache/kiroshi-optics`.
 Usa CUDA automaticamente si PyTorch detecta una GPU NVIDIA compatible; si no,
 usa CPU. El HUD muestra el dispositivo activo. Para CUDA se necesita una

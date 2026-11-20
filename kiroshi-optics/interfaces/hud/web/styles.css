@@ -93,7 +93,7 @@ button, input { font: inherit; }
   text-shadow: 0 1px 5px #000, 0 0 8px rgba(0, 0, 0, 0.85);
 }
 
-.status, .time-readout, .mode-readout, .scan-readout, .gesture-readout {
+.status, .time-readout, .mode-readout, .scan-readout, .gesture-readout, .object-description {
   position: absolute;
   font: 10px/1.2 Consolas, monospace;
   letter-spacing: 0.12em;
@@ -107,6 +107,21 @@ button, input { font: inherit; }
 .scan-readout { right: max(22px, env(safe-area-inset-right)); bottom: max(22px, env(safe-area-inset-bottom)); opacity: 0.54; }
 .gesture-readout { right: max(22px, env(safe-area-inset-right)); bottom: max(40px, calc(env(safe-area-inset-bottom) + 18px)); opacity: 0.72; }
 .scan-readout.active, .gesture-readout.active { opacity: 1; color: var(--accent); }
+.object-description {
+  bottom: max(58px, calc(env(safe-area-inset-bottom) + 42px));
+  left: 50%;
+  max-width: min(440px, calc(100vw - 32px));
+  padding: 7px 10px;
+  transform: translateX(-50%);
+  border: 1px solid rgba(86, 255, 224, 0.3);
+  background: rgba(3, 10, 10, 0.72);
+  color: #d7fff4;
+  font: 10px/1.4 Consolas, monospace;
+  letter-spacing: 0.03em;
+  text-align: center;
+  opacity: 0.88;
+  backdrop-filter: blur(5px);
+}
 
 .reticle {
   position: absolute;

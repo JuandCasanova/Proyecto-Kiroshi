@@ -69,8 +69,6 @@ const scanButton = document.querySelector("#scan-button");
 const gestureButton = document.querySelector("#gesture-button");
 const settingsToggle = document.querySelector("#settings-toggle");
 const settingsPanel = document.querySelector("#settings-panel");
-const colorButton = document.querySelector("#color-button");
-const glitchButton = document.querySelector("#glitch-button");
 const fullscreenButton = document.querySelector("#fullscreen-button");
 const zoomInput = document.querySelector("#zoom");
 const zoomValue = document.querySelector("#zoom-value");
@@ -143,8 +141,6 @@ function updateFeatureControls() {
   const cameraActive = Boolean(mediaStream);
   scanButton.disabled = !cameraActive;
   gestureButton.disabled = !cameraActive;
-  colorButton.disabled = !cameraActive;
-  glitchButton.disabled = !cameraActive;
   zoomInput.disabled = !cameraActive;
   updateVoiceReadout();
   updateFeatureReadouts();
@@ -473,8 +469,6 @@ function disconnectCamera() {
   activateButton.hidden = false;
   updateFeatureControls();
   clearDetectionOverlay();
-  optics.classList.remove("red-mode", "glitch");
-  glitchButton.textContent = "GLITCH: ON";
   setZoom(1);
 }
 
@@ -687,22 +681,12 @@ voiceButton.addEventListener("click", toggleVoiceMode);
 scanButton.addEventListener("click", toggleObjectScan);
 gestureButton.addEventListener("click", toggleGestureZoom);
 settingsToggle.addEventListener("click", toggleSettings);
-colorButton.addEventListener("click", () => optics.classList.toggle("red-mode"));
-glitchButton.addEventListener("click", () => {
-  const enabled = optics.classList.toggle("glitch");
-  glitchButton.textContent = `GLITCH: ${enabled ? "ON" : "OFF"}`;
-});
 fullscreenButton.addEventListener("click", toggleFullscreen);
 zoomInput.addEventListener("input", () => setZoom(Number(zoomInput.value)));
 
 document.addEventListener("keydown", (event) => {
   if (event.repeat || event.target instanceof HTMLInputElement) return;
   const key = event.key.toLowerCase();
-  if (key === "c" && mediaStream) optics.classList.toggle("red-mode");
-  if (key === "g" && mediaStream) {
-    const enabled = optics.classList.toggle("glitch");
-    glitchButton.textContent = `GLITCH: ${enabled ? "ON" : "OFF"}`;
-  }
   if (key === "v" && mediaStream) toggleVoiceMode();
   if (key === "e") void toggleObjectScan();
   if (key === "z") void toggleGestureZoom();

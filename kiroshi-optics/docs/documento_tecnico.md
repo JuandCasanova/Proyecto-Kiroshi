@@ -81,8 +81,6 @@ identificación exacta de modelos de producto ni una precisión determinada.
 | `Z` | Alterna el seguimiento de la mano para controlar el zoom con pulgar e índice. |
 | Voz | En espera, **"detección de voz"** habilita el modo de comandos; **"modo escaneo"** inicia el escaneo y **"zoom"** activa el seguimiento gestual. **"Desactivar detección de voz"** vuelve al modo de espera. El botón de voz, la tecla `V` y los controles gráficos se conservan. |
 | Deslizador de zoom | Ajusta manualmente la ampliación entre 0.7× y 3.0×. |
-| `C` | Alterna el color del HUD. |
-| `G` | Alterna el efecto visual de glitch. |
 | `Q` | Desconecta la cámara. |
 
 ## 4. Arquitectura del sistema

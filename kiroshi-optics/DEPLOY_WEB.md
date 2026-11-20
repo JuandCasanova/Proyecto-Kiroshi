@@ -75,8 +75,6 @@ dispositivo; no garantiza precision de nivel clinico o de producto.
   de voz (o `V`) y los controles gráficos y de teclado siguen disponibles.
 - **Zoom gestual** o `Z`: activa/desactiva el zoom con pulgar e indice; separar
   los dedos acerca la imagen y juntarlos la aleja.
-- **Cambiar color** o `C`: alterna cian y rojo.
-- **Glitch** o `G`: activa o desactiva el efecto visual.
 - **Zoom**: tambien puede ajustarse manualmente; `Q` desconecta la camara.
 
 El escaneo facial solo cuenta rostros y no identifica personas. El

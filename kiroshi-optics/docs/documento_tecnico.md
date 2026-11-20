@@ -64,7 +64,7 @@ identificación exacta de modelos de producto ni una precisión determinada.
 
 | Componente | Estado | Función y límites |
 |---|---|---|
-| HUD web | Operativo como sitio estático | `getUserMedia` muestra la cámara autorizada en el navegador. El botón **E** activa EfficientDet Lite0 mediante MediaPipe Tasks Vision; **Z** activa el zoom por pinza. El objeto más cercano a la retícula muestra una descripción breve local. El video y la inferencia permanecen en el dispositivo. |
+| HUD web | Operativo como sitio estático | `getUserMedia` muestra la cámara autorizada en el navegador. El botón **E** activa EfficientDet Lite0 mediante MediaPipe Tasks Vision, excluye `person` y permite hasta 20 resultados; **Z** activa el zoom por pinza. El objeto más cercano a la retícula muestra una descripción breve local. El video y la inferencia permanecen en el dispositivo. |
 | Modelos del HUD web | Descarga bajo demanda | El SDK MediaPipe Tasks Vision 0.10.14, EfficientDet Lite0 y el modelo Hand Landmarker se obtienen de CDN cuando se activa por primera vez la función correspondiente. Se requiere conexión para esa descarga. |
 | HUD de escritorio | Operativo como aplicación local | OpenCV captura video; MediaPipe detecta rostros sin identificarlos y manos; YOLO11n-seg detecta un conjunto limitado de objetos. Escaneo y zoom se controlan con teclado. |
 | Verificación web opcional del HUD de escritorio | Condicional | Si se configura `GEMINI_API_KEY`, puede enviarse una imagen recortada del objetivo seleccionado para búsqueda/verificación externa. No se envía un objetivo clasificado como persona. El uso depende de un proveedor externo. |
@@ -77,7 +77,7 @@ identificación exacta de modelos de producto ni una precisión determinada.
 | Control | Acción |
 |---|---|
 | Activar vista | Solicita permiso para usar la cámara. |
-| `E` | Alterna la detección local de objetos; las cajas y etiquetas se dibujan sobre la imagen y se muestra una breve descripción del objeto más cercano a la retícula. |
+| `E` | Alterna la detección local de objetos; excluye la clase `person`, dibuja cajas y etiquetas, y muestra una breve descripción del objeto más cercano a la retícula. |
 | `Z` | Alterna el seguimiento de la mano para controlar el zoom con pulgar e índice. |
 | Deslizador de zoom | Ajusta manualmente la ampliación entre 0.7× y 3.0×. |
 | `C` | Alterna el color del HUD. |

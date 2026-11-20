@@ -168,8 +168,9 @@ async function loadObjectDetector() {
       .then(([{ ObjectDetector }, vision]) => ObjectDetector.createFromOptions(vision, {
         baseOptions: { modelAssetPath: OBJECT_MODEL, delegate: "CPU" },
         runningMode: "VIDEO",
-        scoreThreshold: 0.45,
-        maxResults: 8
+        scoreThreshold: 0.4,
+        maxResults: 20,
+        categoryDenylist: ["person"]
       }))
       .then((detector) => {
         objectDetector = detector;

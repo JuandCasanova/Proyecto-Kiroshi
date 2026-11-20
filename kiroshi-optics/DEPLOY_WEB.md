@@ -10,8 +10,9 @@ segun la cache del navegador. Se necesita conexion a internet para esa descarga.
 
 La raiz del repositorio (`index.html`) redirige al HUD web. Configura GitHub
 Pages para publicar `main` desde `/(root)` y sube los cambios. Cada visitante
-autoriza su propia camara; `E` activa la deteccion local de objetos y `Z` activa
-el zoom por gesto de pulgar e indice.
+autoriza su propia camara; `E` activa la deteccion local de objetos —sin la
+clase `person` y con hasta 20 resultados— y `Z` activa el zoom por gesto de
+pulgar e indice.
 
 ## Probar localmente
 
@@ -64,8 +65,9 @@ dispositivo; no garantiza precision de nivel clinico o de producto.
 
 - **Activar camara**: solicita permiso para la camara local del navegador.
 - **Escaneo de objetos** o `E`: activa/desactiva detecciones dibujadas sobre la
-  vista. El objeto más cercano a la retícula también muestra una descripción
-  breve predefinida; el procesamiento se hace localmente en el navegador.
+  vista. Se omite la clase `person` para dar espacio a otras categorías; el
+  objeto más cercano a la retícula muestra una descripción breve predefinida.
+  El procesamiento se hace localmente en el navegador.
 - **Zoom gestual** o `Z`: activa/desactiva el zoom con pulgar e indice; separar
   los dedos acerca la imagen y juntarlos la aleja.
 - **Cambiar color** o `C`: alterna cian y rojo.
